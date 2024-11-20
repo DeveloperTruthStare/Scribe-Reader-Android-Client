@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="foreground">#FFFFFFFF</color>
+    <color name="background">#FF000000</color>
+    <color name="delete">#ff0000</color>
+    <color name="spacer">#ffffff</color>
+    <color name="secondaryText">#8F8F8F</color>
+    <color name="primaryText">#FFFFFF</color>
+    <color name="popupBackground">#1f1f1f</color>
+</resources>

@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">Rikka\'s Repository</string>
+
+    <string name="placeholder_text">Place holder</string>
+
+    <string name="book_cover_description">Book Cover</string>
+    <string name="image_description">Image from the book</string>
+    <string name="voice_button_descriptor">Read the Text out loud.</string>
+
+    <string name="download_book">ダウンロード</string>
+    <string name="cancel_book">キャンセル</string>
+    <string name="start_reading">読む</string>
+    <string name="resetProgress">Reset Progress</string>
+    <string name="downloadingText">Downloading…</string>
+
+    <string name="delete_local_files">ローカルファイルを削除する</string>
+    <string name="reset_progress">Reset Progress</string>
+    <string name="addToFlashCards">Add To Flash Cards</string>
+    <string name="continueButton">次</string>
+
+
+    <string name="entry_kana_placeholder">むら</string>
+    <string name="entry_kanji_placeholder">村</string>
+    <string name="entry_pos_placeholder">Noun</string>
+    <string name="gloss_place">1. village</string>
+    <string name="definitionEntryNotFound">No Entry Found</string>
+
+</resources>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom|center"
+    android:background="@color/background"
+    android:id="@+id/main"
+    tools:context=".reader.Reader">
+
+    <ProgressBar
+        android:id="@id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
+        android:progressTint="@android:color/holo_green_dark"
+        android:progressDrawable="@drawable/rounded_progress_bar"
+        android:max="1000"
+        android:progress="200"
+        android:scaleY="1"/>
+
+    <TextView
+        android:id="@+id/progressText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/progressBar"
+        android:gravity="center"
+        android:foregroundGravity="center"/>
+
+    <LinearLayout
+        android:id="@+id/recyclerLinearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:layout_below="@+id/progressText"
+        android:layout_above="@+id/continue_button"
+        android:orientation="vertical">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="bottom" />
+
+    </LinearLayout>
+    <Button
+        android:id="@+id/continue_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/continueButton"
+        android:textSize="24sp"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@android:color/holo_green_dark"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="8dp"/>
+</RelativeLayout>
+
