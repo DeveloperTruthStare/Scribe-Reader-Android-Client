@@ -1,7 +1,6 @@
 package com.devilishtruthstare.scribereader.reader
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeech.OnInitListener
@@ -22,13 +21,14 @@ import com.devilishtruthstare.scribereader.database.UserStats
 import com.devilishtruthstare.scribereader.reader.content.BookContentAdapter
 import com.github.wanasit.kotori.Tokenizer
 import com.github.wanasit.kotori.optimized.DefaultTermFeatures
+import nl.siegmann.epublib.domain.Resource
 import nl.siegmann.epublib.epub.EpubReader
 import java.io.File
 import java.io.InputStream
 import java.util.Locale
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-
+import java.io.FileInputStream
 
 
 class Reader : AppCompatActivity(), OnInitListener {
@@ -43,7 +43,7 @@ class Reader : AppCompatActivity(), OnInitListener {
     private lateinit var book: nl.siegmann.epublib.domain.Book
 
     private var sections: MutableList<Content> = mutableListOf()
-    private var imageMap: MutableMap<String, File> = mutableMapOf()
+    private var imageMap: MutableMap<String, Resource> = mutableMapOf()
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
@@ -74,25 +74,23 @@ class Reader : AppCompatActivity(), OnInitListener {
 
         // Get information from the intent
 
-        val bookUri = intent.getStringExtra("EXTRA_BOOK_URI")
-        currentChapter = intent.getIntExtra("EXTRA_CHAPTER", 0)
-        currentSection = intent.getIntExtra("EXTRA_SECTION", 0)
+        val title = intent.getStringExtra("EXTRA_TITLE")
+        currentChapter = 0//intent.getIntExtra("EXTRA_CHAPTER", 0)
+        currentSection = 0//intent.getIntExtra("EXTRA_SECTION", 0)
 
         // Load Ebook into memory
         val epubReader = EpubReader()
 
-        val inputStream: InputStream? = contentResolver.openInputStream(Uri.parse(bookUri))
+        val inputStream: InputStream = FileInputStream(File(filesDir, "books/${title}/${title}.epub"))
         book = epubReader.readEpub(inputStream)
 
         imageMap = mutableMapOf()
 
-        val resources = book.spine.spineReferences.map { it.resource }
-        val imageExtensions = setOf("png", "jpg", "jpeg", "gif", "bmp", "webp")
-        for(resource in resources) {
+        val imageExtensions = setOf(".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")
+
+        for((_, resource) in book.resources.resourceMap) {
             if (resource.mediaType.defaultExtension in imageExtensions) {
-                val tempFile = File.createTempFile("image_", ".${resource.mediaType.defaultExtension}")
-                tempFile.outputStream().use { it.write(resource.data) }
-                imageMap[resource.href] = tempFile
+                imageMap[getFileNameWithoutExtension(resource.href)] = resource
             }
         }
 
@@ -129,7 +127,10 @@ class Reader : AppCompatActivity(), OnInitListener {
         progressBar.max = sections.size
         updateProgressBar()
     }
-
+    private fun getFileNameWithoutExtension(filePath: String): String {
+        val file = File(filePath)  // Create a File object from the path
+        return file.nameWithoutExtension  // Get the file name without the extension
+    }
     private fun processChapter() {
         sections = mutableListOf()
         val resources = book.spine.spineReferences.map { it.resource }
@@ -203,7 +204,7 @@ class Reader : AppCompatActivity(), OnInitListener {
             text = "",
             imageUrl = src,
             tokens = emptyList(),
-            imageFile = imageMap[src]!!,
+            imageResource = imageMap[getFileNameWithoutExtension(src)]!!,
             onPlaySoundClick = { }
         )
     }
@@ -215,7 +216,7 @@ class Reader : AppCompatActivity(), OnInitListener {
             text = text,
             imageUrl = "",
             tokens = tokens,
-            imageFile = createTempFile("temp_", "file"),
+            imageResource = null,
             onPlaySoundClick = { }
         )
     }
@@ -227,18 +228,10 @@ class Reader : AppCompatActivity(), OnInitListener {
     }
 
     private fun addContent(position: Int) : Content {
-        val content = generateContent(position)
+        val content = sections[position]
         contentList.add(content)
         adapter.notifyItemInserted(contentList.size-1)
         return content
-    }
-
-    private fun generateContent(line: Int) : Content {
-        val section = sections[line]
-        if (section.isImage) {
-            section.imageFile = File(filesDir, "books/$title/images/${section.imageUrl}")
-        }
-        return section
     }
 
     private fun nextLineClick () {

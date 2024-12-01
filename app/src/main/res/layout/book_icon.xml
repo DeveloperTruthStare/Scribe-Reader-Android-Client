@@ -14,5 +14,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:contentDescription="@string/book_cover_description"
-        android:src="@drawable/missing_book_cover"/>
+        android:src="@drawable/missing_book_cover"
+        android:scaleType="fitCenter"/>
 </androidx.cardview.widget.CardView>

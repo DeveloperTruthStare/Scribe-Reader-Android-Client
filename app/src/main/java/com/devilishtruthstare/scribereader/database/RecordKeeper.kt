@@ -10,17 +10,20 @@ import com.devilishtruthstare.scribereader.book.Book
 class RecordKeeper(private val context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
     companion object {
         private const val DATABASE_NAME = "DownloadedBooks.db"
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 3
         private const val TABLE_NAME = "DownloadedBooks"
         private const val COL_TITLE = "Title"
         private const val COL_COVER = "Cover"
+        private const val COL_FILE_LOCATION = "FileLocation"
     }
 
+    private val userStats = UserStats(context)
     override fun onCreate(db: SQLiteDatabase?) {
         val createTable = """
             CREATE TABLE IF NOT EXISTS $TABLE_NAME (
                 $COL_TITLE TEXT NOT NULL,
-                $COL_COVER TEXT NOT NULL
+                $COL_COVER TEXT NOT NULL,
+                $COL_FILE_LOCATION TEXT NOT NULL
             )
         """
         db?.execSQL(createTable)
@@ -36,6 +39,7 @@ class RecordKeeper(private val context: Context) : SQLiteOpenHelper(context, DAT
         val contentValues = ContentValues()
         contentValues.put(COL_TITLE, book.title)
         contentValues.put(COL_COVER, book.coverImage)
+        contentValues.put(COL_FILE_LOCATION, book.fileLocation)
         db.insert(TABLE_NAME, null, contentValues)
     }
     fun onBookDeleted(book: Book) {
@@ -86,7 +90,7 @@ class RecordKeeper(private val context: Context) : SQLiteOpenHelper(context, DAT
         val book = Book()
         book.title = cursor.getString(cursor.getColumnIndexOrThrow(COL_TITLE))
         book.coverImage = cursor.getString(cursor.getColumnIndexOrThrow(COL_COVER))
-        val userStats = UserStats(context)
+        book.fileLocation = cursor.getString(cursor.getColumnIndexOrThrow(COL_FILE_LOCATION))
         book.currentChapter = userStats.getCurrentChapter(book.title)
         book.currentSection = userStats.getCurrentSection(book.title)
         return book

@@ -41,7 +41,6 @@ android {
 dependencies {
     implementation(libs.jsoup)
     implementation("com.google.android.flexbox:flexbox:3.0.0")
-    implementation(libs.glide.v4110)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.okhttp)
     implementation(libs.gson)
@@ -55,5 +54,4 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    annotationProcessor("com.github.bumptech.glide:compiler:4.11.0")
 }

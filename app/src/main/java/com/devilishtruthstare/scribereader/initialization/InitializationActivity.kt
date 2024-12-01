@@ -62,7 +62,7 @@ class InitializationActivity : AppCompatActivity() {
         GlobalScope.launch(Dispatchers.Main) {
             // Call the background operation on IO dispatcher
             withContext(Dispatchers.IO) {
-                //(application as ScribeReaderApp).tokenizer = Tokenizer.createDefaultTokenizer()
+                (application as ScribeReaderApp).tokenizer = Tokenizer.createDefaultTokenizer()
                 runOnUiThread {
                     onComplete()
                 }
