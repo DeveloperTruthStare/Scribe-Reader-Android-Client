@@ -1,4 +1,14 @@
 # Scribe Reader
+## Attributions
+This application uses [JMDict](http://edrdg.org/jmdict/j_jmdict.html)
+
+### This repository contains a few other slightly altered repositories because I couldn't figure out how to add them through gradle
+- [Kotori](https://github.com/wanasit/kotori) - for Japanese tokenization
+- [Epublib](https://github.com/psiegman/epublib/tree/master/epublib-core/src/main/java/nl/siegmann/epublib) - for parsing .epub files
+- [Jazzlib](https://github.com/psiegman/epublib/tree/master/epublib-core/src/main/java/net/sf/jazzlib) - used by Epublib for unzipping files
+
+### Free Icons
+<a href="https://www.flaticon.com/free-icons/add-to-library" title="add to library icons">Add to library icons created by littleicon - Flaticon</a>
 
 ## What is this?
 This is an app I'm making to help advanced langauge learners consume native Japanese books and content. 
@@ -26,8 +36,3 @@ This takes heavy inspiration from Duolingo with it's gamified quizes throughout 
 ![Kana Reading](./res/Screenshot_reading_display.jpg)
 
 ## As of initial commit to this repository, epubs are no longer processed in another application and retrieved by the app. Now all is done in the app.
-
-
-### Attributions
-This application uses [JMDict](http://edrdg.org/jmdict/j_jmdict.html)
-<a href="https://www.flaticon.com/free-icons/add-to-library" title="add to library icons">Add to library icons created by littleicon - Flaticon</a>
