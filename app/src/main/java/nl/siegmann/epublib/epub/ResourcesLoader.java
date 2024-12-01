@@ -145,5 +145,4 @@ public class ResourcesLoader {
     public static Resources loadResources(ZipFile zipFile, String defaultHtmlEncoding) throws IOException {
     	return loadResources(zipFile, defaultHtmlEncoding, Collections.<MediaType>emptyList());
     }
-
 }

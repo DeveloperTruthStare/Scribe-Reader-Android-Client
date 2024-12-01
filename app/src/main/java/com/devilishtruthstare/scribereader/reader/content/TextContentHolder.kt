@@ -13,12 +13,13 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.devilishtruthstare.scribereader.R
-import com.devilishtruthstare.scribereader.Token
 import com.devilishtruthstare.scribereader.book.Content
 import com.devilishtruthstare.scribereader.database.FlashCard
 import com.devilishtruthstare.scribereader.jmdict.Entry
 import com.devilishtruthstare.scribereader.jmdict.JMDict
 import com.devilishtruthstare.scribereader.jmdict.Sense
+import com.github.wanasit.kotori.Token
+import com.github.wanasit.kotori.optimized.DefaultTermFeatures
 import com.google.android.flexbox.FlexboxLayout
 
 
@@ -44,30 +45,21 @@ class TextContentHolder(
         for(token in section.tokens) {
             val button = LayoutInflater.from(itemView.context).inflate(R.layout.token_view, null)
             val textView = button.findViewById<TextView>(R.id.token_text)
-            val underline = button.findViewById<View>(R.id.underline)
 
             textView.text = token.text
             textView.textSize = 24f
 
-            if (token.features.isEmpty() ||
-                token.features[0] == PUNCTUATION_MARKER ||
-                token.features[0] == PARTICLE_MARKER ||
-                token.features[0] == CONJUGATION_MARKER) {
-                underline.visibility = View.GONE
-            } else {
-                button.setOnClickListener { view ->
-                    if (containsNonKana(token.text))
-                        addToFlashCards(token, section.text, READING)
-                    showReadingPopup(view, token)
-                }
-
-                button.setOnLongClickListener { view ->
-                    addToFlashCards(token, section.text, DEFINITION)
-                    showDefinitionPopup(view, token)
-                    true
-                }
+            button.setOnClickListener { view ->
+                if (containsNonKana(token.text))
+                    addToFlashCards(token, section.text, READING)
+                showReadingPopup(view, token)
             }
 
+            button.setOnLongClickListener { view ->
+                addToFlashCards(token, section.text, DEFINITION)
+                showDefinitionPopup(view, token)
+                true
+            }
             textContainer.addView(button)
         }
         ttsButton.setOnClickListener {
@@ -84,7 +76,7 @@ class TextContentHolder(
         return !kanaRegex.matches(text)
     }
 
-    private fun showDefinitionPopup(anchorView: View, token: Token) {
+    private fun showDefinitionPopup(anchorView: View, token: Token<DefaultTermFeatures>) {
         val entries = getEntries(token)
 
         val definitionView = LayoutInflater.from(anchorView.context).inflate(R.layout.definition_popup, null)
@@ -158,7 +150,7 @@ class TextContentHolder(
         return senseView
     }
 
-    private fun showReadingPopup(anchorView: View, token: Token) {
+    private fun showReadingPopup(anchorView: View, token: Token<DefaultTermFeatures>) {
         // Inflate the popup layout
         val popupView = LayoutInflater.from(anchorView.context).inflate(R.layout.token_details_popup, null)
 
@@ -181,18 +173,9 @@ class TextContentHolder(
         val baseWord = popupView.findViewById<TextView>(R.id.word)
         val partOfSpeech = popupView.findViewById<TextView>(R.id.partOfSpeech)
 
-        if (token.features.size >= 8)
-            readingText.text = token.features[7]
-        else
-            readingText.visibility = View.GONE
-        if (token.features.size >= 7)
-            baseWord.text = token.features[6]
-        else
-            baseWord.visibility = View.GONE
-        if (token.features.isNotEmpty())
-            partOfSpeech.text = token.features[0]
-        else
-            partOfSpeech.visibility = View.GONE
+        readingText.visibility = View.GONE
+        baseWord.visibility = View.GONE
+        partOfSpeech.visibility = View.GONE
 
         // Measure the popup width to center it properly
         popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
@@ -213,12 +196,8 @@ class TextContentHolder(
         popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, xOffset, yOffset)
     }
 
-    private fun getEntries(token: Token): List<Entry> {
-        val searchingWord = if (token.features.size >= 7 && token.features[6] != EMPTY_MARKER) {
-            token.features[6]
-        } else {
-            token.text
-        }
+    private fun getEntries(token: Token<DefaultTermFeatures>): List<Entry> {
+        val searchingWord = token.text
 
         val entries = JMDict(context).getEntries(searchingWord)
         if (entries.isEmpty()) {
@@ -227,12 +206,8 @@ class TextContentHolder(
         return entries
     }
 
-    private fun addToFlashCards(token: Token, sentence: String, type: Int) {
-        val searchingWord = if (token.features.size >= 7 && token.features[6] != EMPTY_MARKER) {
-            token.features[6]
-        } else {
-            token.text
-        }
+    private fun addToFlashCards(token: Token<DefaultTermFeatures>, sentence: String, type: Int) {
+        val searchingWord = token.text
 
         val entries = JMDict(context).getEntries(searchingWord)
         if (entries.isEmpty()) {

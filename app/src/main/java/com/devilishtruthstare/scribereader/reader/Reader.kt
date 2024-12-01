@@ -1,6 +1,7 @@
 package com.devilishtruthstare.scribereader.reader
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeech.OnInitListener
@@ -14,17 +15,20 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.gson.Gson
-import com.devilishtruthstare.scribereader.book.Book
 import com.devilishtruthstare.scribereader.R
+import com.devilishtruthstare.scribereader.ScribeReaderApp
 import com.devilishtruthstare.scribereader.book.Content
 import com.devilishtruthstare.scribereader.database.UserStats
 import com.devilishtruthstare.scribereader.reader.content.BookContentAdapter
+import com.github.wanasit.kotori.Tokenizer
+import com.github.wanasit.kotori.optimized.DefaultTermFeatures
 import nl.siegmann.epublib.epub.EpubReader
 import java.io.File
-import java.io.FileInputStream
+import java.io.InputStream
 import java.util.Locale
-import kotlin.math.max
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
+
 
 
 class Reader : AppCompatActivity(), OnInitListener {
@@ -32,17 +36,19 @@ class Reader : AppCompatActivity(), OnInitListener {
         private const val NEXT_TEXT = "次"
         private const val NEXT_CHAPTER_TEXT = "次の第"
     }
-    private lateinit var book: Book
-    private lateinit var title: String
+
     private var currentChapter: Int = 0
     private var currentSection: Int = 1
+    private var numChapters: Int = 0
+    private lateinit var book: nl.siegmann.epublib.domain.Book
+
+    private var sections: MutableList<Content> = mutableListOf()
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var progressBar: ProgressBar
     private lateinit var progressText: TextView
     private lateinit var continueButton: Button
-
 
     private lateinit var adapter: BookContentAdapter
     private lateinit var contentList: MutableList<Content>
@@ -51,6 +57,8 @@ class Reader : AppCompatActivity(), OnInitListener {
 
     private lateinit var tts: TextToSpeech
     private var ttsReady: Boolean = false
+
+    private lateinit var tokenizer: Tokenizer<DefaultTermFeatures>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,10 +72,23 @@ class Reader : AppCompatActivity(), OnInitListener {
         tts = TextToSpeech(this, this)
 
         // Get information from the intent
-        title = intent.getStringExtra("EXTRA_TITLE")!!
+
+        val bookUri = intent.getStringExtra("EXTRA_BOOK_URI")
         currentChapter = intent.getIntExtra("EXTRA_CHAPTER", 0)
-        currentSection = intent.getIntExtra("EXTRA_SECTION", 1)
-        currentSection = max(currentSection, 1)
+        currentSection = intent.getIntExtra("EXTRA_SECTION", 0)
+
+        // Load Ebook into memory
+        val epubReader = EpubReader()
+
+        val inputStream: InputStream? = contentResolver.openInputStream(Uri.parse(bookUri))
+        book = epubReader.readEpub(inputStream)
+        numChapters = book.resources.size()
+
+        processChapter()
+
+        // Initialize the Japanese text Tokenizer
+        tokenizer = (application as ScribeReaderApp).tokenizer
+
 
         userStats = UserStats(this)
         contentList = mutableListOf()
@@ -76,32 +97,6 @@ class Reader : AppCompatActivity(), OnInitListener {
         continueButton = findViewById(R.id.continue_button)
         continueButton.setOnClickListener {
             nextLineClick()
-        }
-
-        // Load the book into memory
-        val epubReader = EpubReader()
-        val book = epubReader.readEpub(FileInputStream(File(filesDir, "books/$title")))
-
-        val resources = book.spine.spineReferences.map { it.resource }
-        for (resource in resources) {
-            val content = resource.reader.use { it.readText() }
-            val sentences = content.split(Regex("(?<=[.!?])\\s+"))
-
-            for (sentence in sentences) {
-                Log.d("Sentence: ", sentence.trim())
-            }
-        }
-    }
-
-    fun temp() {
-        val jsonString = findDataFile()
-        val gson = Gson()
-        book = gson.fromJson(jsonString, Book::class.java)!!
-
-        // Setup the initial content list
-        for (i in 0 until currentSection) {
-            val content = generateContent(currentChapter, i)
-            contentList.add(content)
         }
 
         // Setup the Recycler View
@@ -117,25 +112,115 @@ class Reader : AppCompatActivity(), OnInitListener {
         // Set Progress Initial Values
         progressBar = findViewById(R.id.progressBar)
         progressText = findViewById(R.id.progressText)
-        progressBar.max = book.chapters[currentChapter].content.size
+        progressBar.max = sections.size
         updateProgressBar()
+    }
+
+    private fun processChapter() {
+        sections = mutableListOf()
+        val resources = book.spine.spineReferences.map { it.resource }
+
+        var skip: Boolean
+        var body: Element
+
+        do {
+            skip = false
+
+            val text = resources[currentChapter].reader.readText().trim()
+            val document = Jsoup.parse(text)
+
+            body = document.body()
+
+            for (className in body.classNames()) {
+                if (className == "p-caution" || className == "p-colophon") {
+                    skip = true
+                    break
+                }
+            }
+        } while (skip)
+
+        traverseNodes(body)
+
+        if (sections.size == 0) {
+            currentChapter++
+            processChapter()
+        }
+    }
+
+    private fun traverseNodes(element: Element, depth: Int = 0) {
+        if (element.tagName() == "p") {
+            val result = StringBuilder()
+
+            // Iterate over all child nodes of the <p> tag
+            for (node in element.childNodes()) {
+                when {
+                    node.nodeName() == "ruby" -> {
+                        val rubyElement = node as Element
+                        result.append(rubyElement.ownText())
+                    }
+                    node.nodeName() == "#text" -> {
+                        result.append(node.toString())
+                    }
+                    node.nodeName() == "img" || node.nodeName() == "image" -> {
+                        val imgElement = node as Element
+                        val src = imgElement.attr("src")
+                        val href = imgElement.attr("href")
+                        if (src.isNotBlank()) {
+                            sections.add(createImageSection(src))
+                        } else if (href.isNotBlank()) {
+                            sections.add(createImageSection(href))
+                        }
+                    }
+                }
+            }
+            if (result.trim() != "") {
+                sections.add(createTextSection(result.toString().trim()))
+            }
+        }
+
+        for (child in element.children()) {
+            traverseNodes(child, depth + 1)
+        }
+    }
+    private fun createImageSection(src: String): Content {
+
+        return Content(
+            isImage = true,
+            text = "",
+            imageUrl = src,
+            tokens = emptyList(),
+            imageFile = File(filesDir, "books"),
+            onPlaySoundClick = { }
+        )
+    }
+    private fun createTextSection(text: String): Content {
+        val tokens = tokenizer.tokenize(text)
+
+        return Content(
+            isImage = false,
+            text = text,
+            imageUrl = "",
+            tokens = tokens,
+            imageFile = File(filesDir, "books"),
+            onPlaySoundClick = { }
+        )
     }
 
     private fun updateProgressBar() {
         progressBar.progress = currentSection
-        val text = "Chapter: $currentChapter: ${currentSection+1}/${book.chapters[currentChapter].content.size}"
+        val text = "Chapter: $currentChapter: ${currentSection+1}/${sections.size}"
         progressText.text = text
     }
 
     private fun addContent(position: Int) : Content {
-        val content = generateContent(currentChapter, position)
+        val content = generateContent(position)
         contentList.add(content)
         adapter.notifyItemInserted(contentList.size-1)
         return content
     }
 
-    private fun generateContent(chapter: Int, line: Int) : Content {
-        val section = book.chapters[chapter].content[line]
+    private fun generateContent(line: Int) : Content {
+        val section = sections[line]
         if (section.isImage) {
             section.imageFile = File(filesDir, "books/$title/images/${section.imageUrl}")
         }
@@ -143,20 +228,22 @@ class Reader : AppCompatActivity(), OnInitListener {
     }
 
     private fun nextLineClick () {
-        if (currentSection == book.chapters[currentChapter].content.size) {
-            if (currentChapter == book.chapters.size-1) {
+        if (currentSection == sections.size) {
+            if (currentChapter == numChapters) {
                 Log.e("Reader", "Book finished")
                 return
             }
             currentChapter++
             currentSection = 0
             clearContent()
+            processChapter()
             continueButton.text = NEXT_TEXT
-            progressBar.max = book.chapters[currentChapter].content.size
+            progressBar.max = sections.size
         }
 
         val section = addContent(currentSection)
-        tts.speak(section.text, TextToSpeech.QUEUE_FLUSH, null, null)
+        if (ttsReady)
+            tts.speak(section.text, TextToSpeech.QUEUE_FLUSH, null, null)
 
 
         linearLayoutManager.scrollToPosition(contentList.size)
@@ -166,8 +253,7 @@ class Reader : AppCompatActivity(), OnInitListener {
         currentSection++
         userStats.setCurrentPage(book.title, currentChapter, currentSection)
 
-        if (currentSection == book.chapters[currentChapter].content.size) {
-            continueButton
+        if (currentSection == sections.size) {
             continueButton.text = NEXT_CHAPTER_TEXT
         }
     }
@@ -176,29 +262,6 @@ class Reader : AppCompatActivity(), OnInitListener {
         contentList.clear()
         adapter.notifyItemRangeRemoved(0, previousContentSize)
     }
-
-    private fun findDataFile(): String? {
-        // Define the root directory where we will search
-        val dir = File(filesDir, "books")
-
-        // Check if the directory exists and is a directory
-        if (!dir.exists() || !dir.isDirectory) {
-            Log.e("READER", "Directory not found: ${dir.absolutePath}")
-            return null
-        }
-
-        // Recursively search through all files in the directory
-        val dataFile = File(dir, "$title/data.json")
-
-        if (dataFile.exists()) {
-            Log.d("READER", "Found data.json at: ${dataFile.absolutePath}")
-            return dataFile.readText()
-        } else {
-            Log.e("READER", "data.json file not found in directory: ${dir.absolutePath}")
-            return null
-        }
-    }
-
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             // Set the language for the TTS engine

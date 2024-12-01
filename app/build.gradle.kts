@@ -39,6 +39,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.jsoup)
     implementation("com.google.android.flexbox:flexbox:3.0.0")
     implementation(libs.glide.v4110)
     implementation(libs.androidx.swiperefreshlayout)

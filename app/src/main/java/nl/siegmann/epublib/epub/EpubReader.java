@@ -90,11 +90,11 @@ public class EpubReader {
 		return readEpub(resources);
 	}
 	
-    public Book readEpub(Resources resources) throws IOException{
+    public Book readEpub(Resources resources) {
         return readEpub(resources, new Book());
     }
     
-    public Book readEpub(Resources resources, Book result) throws IOException{
+    public Book readEpub(Resources resources, Book result){
     	if (result == null) {
     		result = new Book();
     	}

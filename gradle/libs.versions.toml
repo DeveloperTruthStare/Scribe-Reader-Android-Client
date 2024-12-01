@@ -6,6 +6,7 @@ epublibCoreVersion = "v3.1"
 glide = "4.15.1"
 glideVersion = "4.11.0"
 gson = "2.10.1"
+jsoup = "1.15.4"
 kotlin = "1.9.24"
 coreKtx = "1.13.1"
 junit = "4.13.2"
@@ -31,6 +32,7 @@ github-epublib-core = { module = "com.github.developertruthstare.epublib:epublib
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 glide-v4110 = { module = "com.github.bumptech.glide:glide", version.ref = "glideVersion" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

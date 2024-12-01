@@ -9,15 +9,23 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.devilishtruthstare.scribereader.R
+import com.devilishtruthstare.scribereader.ScribeReaderApp
 import com.devilishtruthstare.scribereader.jmdict.JMDict
 import com.devilishtruthstare.scribereader.jmdict.JMDictParser
 import com.devilishtruthstare.scribereader.library.LibraryActivity
+import com.github.wanasit.kotori.Tokenizer
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class InitializationActivity : AppCompatActivity() {
     companion object {
         private const val STATUS_LOAD_JMDICT = "Loading JMDict"
         private const val STATUS_LOADING_DATABASE = "Loading Entries into Database"
         private const val STATUS_CHECKING_DB = "Checking Database"
+        private const val STATUS_INITIALIZING_TOKENIZER = "Initializing Tokenizer"
     }
     private lateinit var statusText: TextView
     private lateinit var progressBar: ProgressBar
@@ -39,6 +47,29 @@ class InitializationActivity : AppCompatActivity() {
         progressText = findViewById(R.id.progressText)
         secondaryProgressText = findViewById(R.id.secondaryProgressText)
 
+        loadTokenizer {
+            loadDictionary {
+                moveToLibraryActivity()
+            }
+        }
+    }
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun loadTokenizer(onComplete: () -> Unit) {
+        statusText.text = STATUS_INITIALIZING_TOKENIZER
+        progressBar.max = 100
+        progressBar.progress = 1
+
+        GlobalScope.launch(Dispatchers.Main) {
+            // Call the background operation on IO dispatcher
+            withContext(Dispatchers.IO) {
+                (application as ScribeReaderApp).tokenizer = Tokenizer.createDefaultTokenizer()
+                runOnUiThread {
+                    onComplete()
+                }
+            }
+        }
+    }
+    private fun loadDictionary(onComplete: () -> Unit) {
         val dictionary = JMDict(this)
 
         // Check if JMDict is already loaded into sqlite
@@ -65,10 +96,10 @@ class InitializationActivity : AppCompatActivity() {
                     progressBar.progress = entriesAdded
                 }
             }, onFinished = {
-                moveToLibraryActivity()
+                onComplete()
             })
         } else {
-            moveToLibraryActivity()
+            onComplete()
         }
     }
     private fun moveToLibraryActivity() {
