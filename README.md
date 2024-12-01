@@ -26,3 +26,8 @@ This takes heavy inspiration from Duolingo with it's gamified quizes throughout 
 ![Kana Reading](./res/Screenshot_reading_display.jpg)
 
 ## As of initial commit to this repository, epubs are no longer processed in another application and retrieved by the app. Now all is done in the app.
+
+
+### Attributions
+This application uses [JMDict](http://edrdg.org/jmdict/j_jmdict.html)
+<a href="https://www.flaticon.com/free-icons/add-to-library" title="add to library icons">Add to library icons created by littleicon - Flaticon</a>

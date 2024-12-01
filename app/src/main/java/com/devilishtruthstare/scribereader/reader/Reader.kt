@@ -43,6 +43,7 @@ class Reader : AppCompatActivity(), OnInitListener {
     private lateinit var book: nl.siegmann.epublib.domain.Book
 
     private var sections: MutableList<Content> = mutableListOf()
+    private var imageMap: MutableMap<String, File> = mutableMapOf()
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
@@ -82,6 +83,19 @@ class Reader : AppCompatActivity(), OnInitListener {
 
         val inputStream: InputStream? = contentResolver.openInputStream(Uri.parse(bookUri))
         book = epubReader.readEpub(inputStream)
+
+        imageMap = mutableMapOf()
+
+        val resources = book.spine.spineReferences.map { it.resource }
+        val imageExtensions = setOf("png", "jpg", "jpeg", "gif", "bmp", "webp")
+        for(resource in resources) {
+            if (resource.mediaType.defaultExtension in imageExtensions) {
+                val tempFile = File.createTempFile("image_", ".${resource.mediaType.defaultExtension}")
+                tempFile.outputStream().use { it.write(resource.data) }
+                imageMap[resource.href] = tempFile
+            }
+        }
+
         numChapters = book.resources.size()
 
         processChapter()
@@ -189,7 +203,7 @@ class Reader : AppCompatActivity(), OnInitListener {
             text = "",
             imageUrl = src,
             tokens = emptyList(),
-            imageFile = File(filesDir, "books"),
+            imageFile = imageMap[src]!!,
             onPlaySoundClick = { }
         )
     }
@@ -201,7 +215,7 @@ class Reader : AppCompatActivity(), OnInitListener {
             text = text,
             imageUrl = "",
             tokens = tokens,
-            imageFile = File(filesDir, "books"),
+            imageFile = createTempFile("temp_", "file"),
             onPlaySoundClick = { }
         )
     }
