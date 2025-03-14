@@ -7,23 +7,45 @@
     android:layout_marginStart="10dp"
     android:layout_marginEnd="10dp"
     xmlns:android="http://schemas.android.com/apk/res/android">
-    <TextView
-        android:id="@+id/kanaPrimary"
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/entry_kana_placeholder"
-        android:textAlignment="textStart"
-        android:textColor="@color/secondaryText"
-        android:layout_gravity="start"
-        android:textSize="16sp"/>
-    <TextView
-        android:id="@+id/kanjiPrimary"
-        android:textColor="@color/primaryText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/entry_kanji_placeholder"
-        android:textStyle="bold"
-        android:textSize="30sp"/>
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/kanaPrimary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:text="@string/entry_kana_placeholder"
+                android:textAlignment="textStart"
+                android:textColor="@color/secondaryText"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/kanjiPrimary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/entry_kanji_placeholder"
+                android:textColor="@color/primaryText"
+                android:textSize="30sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+        <ImageButton
+            android:id="@+id/add_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:background="@null"
+            android:src="@android:drawable/ic_input_add"/>
+
+    </RelativeLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:text="@string/entry_pos_placeholder"
         android:id="@+id/posText"
-        android:layout_marginTop="5dp"
+        android:layout_marginTop="0dp"
         android:textColor="@color/secondaryText"
         android:textSize="14sp" />
     <TextView
