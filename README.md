@@ -7,11 +7,14 @@ This takes heavy inspiration from Duolingo with it's gamified quizes throughout 
 ### Core Features
 - [x] Loading .epub file in app 
 - [x] In app parsing of .epub file removing unneccessary text, and splitting into chapters
-- [x] In app tokenization of Japanese text, getting part of speech and base word
-- [ ] Basic TTS to read out the story
+- [x] In app tokenization of Japanese text, getting part of speech and dictionary form
+- [x] Searchable dictionary from anywhere in the app with sentence tokenization and custom input
+- [x] Basic TTS to read out the story
 - [ ] SRS/Flash card system
 - [ ] Add cards to review when definition/reading is viewed during story
-      
+- [ ] Song Lyric Retrieval and analysis
+- [ ] Anime/Video Subtitle processing/retrieval
+- [ ] Website retrieval, processing and tokenization  
       
 # Start of Chapter 1 of a certain light novel
 ![Image Display](./res/Screenshot_image_display.jpg)
