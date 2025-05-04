@@ -8,24 +8,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.devilishtruthstare.scribereader.MainActivity
 import com.devilishtruthstare.scribereader.R
-import com.devilishtruthstare.scribereader.ScribeReaderApp
-import com.devilishtruthstare.scribereader.jmdict.JMDict
-import com.devilishtruthstare.scribereader.jmdict.JMDictParser
-import com.devilishtruthstare.scribereader.library.LibraryActivity
-import tokenizer.Tokenizer
+import com.devilishtruthstare.scribereader.dictionary.JMDict
+import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils
+import kotlinx.coroutines.launch
 
 
 class InitializationActivity : AppCompatActivity() {
-    companion object {
-        private const val STATUS_LOAD_JMDICT = "Loading JMDict"
-        private const val STATUS_LOADING_DATABASE = "Loading Entries into Database"
-        private const val STATUS_CHECKING_DB = "Checking Database"
-    }
     private lateinit var statusText: TextView
     private lateinit var progressBar: ProgressBar
-    private lateinit var progressText: TextView
-    private lateinit var secondaryProgressText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,53 +32,41 @@ class InitializationActivity : AppCompatActivity() {
 
         statusText = findViewById(R.id.statusText)
         progressBar = findViewById(R.id.progressBar)
-        progressText = findViewById(R.id.progressText)
-        secondaryProgressText = findViewById(R.id.secondaryProgressText)
 
         loadDictionary {
             moveToLibraryActivity()
         }
     }
 
-
     private fun loadDictionary(onComplete: () -> Unit) {
-        val dictionary = JMDict(this)
+        val dictionary = JMDict.getInstance(this)
 
-        // Check if JMDict is already loaded into sqlite
-        statusText.text = STATUS_CHECKING_DB
         if (!dictionary.isDatabaseInitialized()) {
-            // Load JMDict
-            statusText.text = STATUS_LOAD_JMDICT
-            progressText.text = "1 / 2"
             val inputStream = resources.openRawResource(R.raw.jmdict)
-            val entries = JMDictParser().parseJson(inputStream)
-            // Enter entries into SQLite
-            statusText.text = STATUS_LOADING_DATABASE
-            progressText.text = "2 / 2"
+            val entries = DictionaryUtils.parseJson(inputStream)
             var entriesAdded = 0
             val numEntries = entries.size
             progressBar.max = numEntries
-            val secondText = "0 / $numEntries"
-            secondaryProgressText.text = secondText
-            dictionary.loadEntries(entries, onEntryAdded = {
-                runOnUiThread {
-                    entriesAdded++
-                    val text = "$entriesAdded / $numEntries"
-                    secondaryProgressText.text = text
-                    progressBar.progress = entriesAdded
-                }
-            }, onFinished = {
-                onComplete()
-            })
+            lifecycleScope.launch {
+                dictionary.loadEntries(entries, onEntryAdded = {
+                    runOnUiThread {
+                        entriesAdded += 100
+                        val percent = (entriesAdded.toFloat() / numEntries * 100).toInt()
+                        statusText.text = getString(R.string.initialization_loading_jmdict, percent)
+                        progressBar.progress = entriesAdded
+                    }
+                }, onFinished = {
+                    onComplete()
+                })
+            }
         } else {
             onComplete()
         }
     }
     private fun moveToLibraryActivity() {
-        // Move to main screen
-        val intent = Intent(this, LibraryActivity::class.java)
+        val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         startActivity(intent)
-        finish() // Optional, explicitly finishes the InitializationActivity
+        finish()
     }
 }

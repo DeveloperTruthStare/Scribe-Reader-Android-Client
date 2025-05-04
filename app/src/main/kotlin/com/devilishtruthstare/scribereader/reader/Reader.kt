@@ -12,28 +12,25 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.devilishtruthstare.scribereader.R
+import com.devilishtruthstare.scribereader.book.Book
 import com.devilishtruthstare.scribereader.book.Content
-import com.devilishtruthstare.scribereader.database.UserStats
+import com.devilishtruthstare.scribereader.database.RecordKeeper
+import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils
 import com.devilishtruthstare.scribereader.reader.content.BookContentAdapter
-import nl.siegmann.epublib.epub.EpubReader
-import java.io.File
-import java.io.InputStream
+import kotlinx.coroutines.launch
 import java.util.Locale
-import java.io.FileInputStream
 
 
 class Reader : AppCompatActivity(), OnInitListener {
     companion object {
+        const val EXTRA_BOOK_ID = "BOOK_ID"
         private const val NEXT_TEXT = "次"
         private const val NEXT_CHAPTER_TEXT = "次の第"
     }
-
-
-    private lateinit var bookParser: BookParser
-
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var progressBar: ProgressBar
@@ -43,10 +40,10 @@ class Reader : AppCompatActivity(), OnInitListener {
     private lateinit var adapter: BookContentAdapter
     private lateinit var contentList: MutableList<Content>
 
-    private lateinit var userStats: UserStats
 
     private lateinit var tts: TextToSpeech
     private var ttsReady: Boolean = false
+    private lateinit var book: Book
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,81 +59,90 @@ class Reader : AppCompatActivity(), OnInitListener {
         tts = TextToSpeech(this, this)
 
         // Get information from the intent
-        val title = intent.getStringExtra("EXTRA_TITLE")
+        val bookId = intent.getIntExtra(EXTRA_BOOK_ID, -1)
 
-        // Load Ebook into memory
-        val epubReader = EpubReader()
-        val inputStream: InputStream = FileInputStream(File(filesDir, "books/${title}/${title}.epub"))
-
-        bookParser = BookParser(epubReader.readEpub(inputStream), tokenizer.Tokenizer.newTokenizer())
-        bookParser.processBook()
-
-        bookParser.setChapter(intent.getIntExtra("EXTRA_CHAPTER", 0))
-        bookParser.setSection(intent.getIntExtra("EXTRA_SECTION", 0))
-
-        userStats = UserStats(this)
         contentList = mutableListOf()
 
-        // Setup the Continue Button
+        // Get references to UI Elements
+        linearLayoutManager = LinearLayoutManager(this)
+        linearLayoutManager.scrollToPosition(contentList.size)
+
+        recyclerView = findViewById(R.id.recycler_view)
+        recyclerView.layoutManager = linearLayoutManager
+
+        adapter = BookContentAdapter(contentList, this)
+        recyclerView.adapter = adapter
+
+        progressBar = findViewById(R.id.progressBar)
+        progressText = findViewById(R.id.progressText)
+
         continueButton = findViewById(R.id.continue_button)
+        continueButton.isEnabled = false
         continueButton.setOnClickListener {
             nextLineClick()
         }
 
-        // Setup the Recycler View
-        recyclerView = findViewById(R.id.recycler_view)
-        linearLayoutManager = LinearLayoutManager(this)
-        recyclerView.layoutManager = linearLayoutManager
-        adapter = BookContentAdapter(contentList, this)
-        recyclerView.adapter = adapter
-
-        linearLayoutManager.scrollToPosition(contentList.size)
-
-
-        // Set Progress Initial Values
-        progressBar = findViewById(R.id.progressBar)
-        progressText = findViewById(R.id.progressText)
-        progressBar.max = bookParser.getChapterSize()
-        updateProgressBar()
+        val recordKeeper = RecordKeeper.getInstance(this)
+        val bookRecord = recordKeeper.getBookById(bookId)!!
+        recordKeeper.addOpenHistory(bookId)
+        lifecycleScope.launch {
+            book = DictionaryUtils.parseBook(this@Reader, bookRecord.title).await()
+            book.bookId = bookRecord.bookId
+            book.currentSection = bookRecord.currentSection
+            book.currentChapter = bookRecord.currentChapter
+            progressBar.max = book.chapters.size
+            updateProgressBar()
+            continueButton.isEnabled = true
+            nextLineClick()
+        }
     }
 
     private fun updateProgressBar() {
-        progressBar.progress = bookParser.getCurrentSection()
-        progressBar.max = bookParser.getChapterSize()
+        progressBar.progress = book.currentSection
+        progressBar.max = book.chapters.size
 
-        val text = "Chapter: ${bookParser.getCurrentChapter()}: ${bookParser.getCurrentSection()+1}/${bookParser.getChapterSize()}"
+        val text = "Chapter: ${book.currentChapter}: ${book.currentSection+1}/${book.chapters[book.currentChapter].content.size}"
         progressText.text = text
     }
 
     private fun nextLineClick () {
-        if (bookParser.endOfChapter()) {
-            if (bookParser.endOfBook()) {
+        if (book.currentSection == book.chapters[book.currentChapter].content.size-1) {
+            if (book.currentChapter == book.chapters.size-1) {
                 Log.e("TODO", "Book finished")
                 // Intent go to library activity
                 return
             }
 
-            bookParser.nextChapter()
+            book.currentChapter++
+            book.currentSection = 0
             clearContent()
 
             continueButton.text = NEXT_TEXT
-            progressBar.max = bookParser.getChapterSize()
+            progressBar.max = book.chapters[book.currentChapter].content.size
         }
 
-        val section = bookParser.nextSection()
+        val section = book.chapters[book.currentChapter].content[book.currentSection++]
         contentList.add(section)
         adapter.notifyItemInserted(contentList.size-1)
 
-        if (ttsReady && !section.isImage)
-            tts.speak(section.content, TextToSpeech.QUEUE_FLUSH, null, null)
+        section.onPlaySoundClick = {
+            if (ttsReady && !section.isImage)
+                tts.speak(section.content, TextToSpeech.QUEUE_FLUSH, null, null)
+        }
+
+        section.onPlaySoundClick()
 
         linearLayoutManager.scrollToPosition(contentList.size)
 
         updateProgressBar()
 
-        userStats.setCurrentPage(bookParser.getTitle(), bookParser.getCurrentChapter(), bookParser.getCurrentSection())
+        RecordKeeper.getInstance(this).setProgress(
+            book.bookId,
+            book.currentChapter,
+            book.currentSection
+        )
 
-        if (bookParser.endOfChapter()) {
+        if (book.currentChapter == book.chapters.size-1) {
             continueButton.text = NEXT_CHAPTER_TEXT
         }
     }
@@ -145,6 +151,7 @@ class Reader : AppCompatActivity(), OnInitListener {
         contentList.clear()
         adapter.notifyItemRangeRemoved(0, previousContentSize)
     }
+
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             // Set the language for the TTS engine
@@ -161,7 +168,6 @@ class Reader : AppCompatActivity(), OnInitListener {
         }
     }
     override fun onDestroy() {
-        // Shutdown TTS when the activity is destroyed
         if (::tts.isInitialized) {
             tts.stop()
             tts.shutdown()

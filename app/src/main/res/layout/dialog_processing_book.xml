@@ -1,0 +1,31 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/rounded_popup"
+    android:backgroundTint="@color/popupBackground"
+    android:padding="24dp"
+    android:layout_gravity="center"
+    android:gravity="center_horizontal">
+
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/uploading_parsing_book"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/primaryText"
+        android:layout_marginBottom="16dp"/>
+
+    <ProgressBar
+        android:id="@+id/dialogProgressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:progressTint="@android:color/holo_green_dark"
+        android:progressDrawable="@drawable/rounded_progress_bar"
+        android:max="100"
+        android:progress="10"
+        android:layout_marginBottom="16dp"/>
+</LinearLayout>

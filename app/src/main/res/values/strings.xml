@@ -2,6 +2,8 @@
     <string name="app_name">Rikka\'s Repository</string>
 
     <string name="placeholder_text">Place holder</string>
+    <string name="placeholder_kanji">食べたい</string>
+    <string name="placeholder_furigana">たべたい</string>
 
     <string name="book_cover_description">Book Cover</string>
     <string name="image_description">Image from the book</string>
@@ -18,11 +20,53 @@
     <string name="addToFlashCards">Add To Flash Cards</string>
     <string name="continueButton">次</string>
 
-
+    <!-- Dictionary -->
+    <string name="dictionary_search_hint">単語を入力して</string>
     <string name="entry_kana_placeholder">むら</string>
     <string name="entry_kanji_placeholder">村</string>
     <string name="entry_pos_placeholder">Noun</string>
     <string name="gloss_place">1. village</string>
+    <string name="gloss_text">%1$d. %2$s</string>
     <string name="definitionEntryNotFound">No Entry Found</string>
+    <string name="view_example_sentences">例文を見せる</string>
+
+    <!-- Menu Navigation -->
+    <string name="menu_home">ホーム</string>
+    <string name="menu_flash_cards">勉強</string>
+    <string name="menu_library">ライブラリ</string>
+    <string name="menu_add">追加</string>
+
+
+    <string-array name="upload_type_options">
+        <item>.epub</item>
+        <item>.json (Anime)</item>
+        <item>.json (Anime)</item>
+        <item>URL</item>
+    </string-array>
+
+    <string name="addToLibrary">ライブラリに追加</string>
+    <string name="select_file_type">ファイルフォーマット</string>
+
+    <string name="author">作家</string>
+    <string name="language">言語</string>
+    <string name="length">距離</string>
+    <string name="chapters">第数</string>
+    <string name="published">発行日</string>
+
+    <string name="upload_book">Upload Book</string>
+    <string name="upload_anime">Upload Anime</string>
+    <string name="upload_music">Upload Music</string>
+    <string name="upload_website">Upload Website </string>
+
+    <string name="uploading_parsing_book">Parsing Book</string>
+    <string name="uploading_processing_book">Processing Book %1$d%%</string>
+
+    <string name="initialization_loading_jmdict">Loading JMDict %1$d%%</string>
+
+    <!-- Home Tab -->
+    <string name="home_read_label">読み続く</string>
+
+    <!-- Image Descriptions -->
+    <string name="description_bookCover">Book Cover Image</string>
 
 </resources>

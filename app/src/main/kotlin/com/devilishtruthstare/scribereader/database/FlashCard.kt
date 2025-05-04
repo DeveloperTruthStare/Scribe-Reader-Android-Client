@@ -9,6 +9,14 @@ class FlashCard(
     context: Context
 ) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
     companion object {
+        @Volatile
+        private var INSTANCE: FlashCard? = null
+        fun getInstance(context: Context): FlashCard {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: FlashCard(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+
         private const val DATABASE_NAME = "FlashCards.db"
         private const val DATABASE_VERSION = 2
 

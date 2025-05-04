@@ -7,4 +7,12 @@
     <color name="secondaryText">#1f1f1f</color>
     <color name="primaryText">#000000</color>
     <color name="popupBackground">#8f8f8f</color>
+
+    <color name="black">#000000</color>
+    <color name="teal_200">#03DAC5</color>
+
+    <!-- Upload Colors -->
+    <color name="colorBackground">#F5F5F5</color> <!-- Light Off-white background -->
+    <color name="colorCard">#FFFFFF</color> <!-- Pure white card -->
+    <color name="colorPrimary">#6200EE</color> <!-- Example purple for buttons -->
 </resources>

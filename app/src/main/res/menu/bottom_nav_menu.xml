@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/profile"
-        android:title="Books"/>
+        android:id="@+id/nav_home"
+        android:icon="@drawable/home"
+        android:title="@string/menu_home" />
     <item
-        android:id="@+id/home"
-        android:title="Flash Cards"/>
+        android:id="@+id/nav_flash_cards"
+        android:icon="@drawable/learn"
+        android:title="@string/menu_flash_cards" />
+    <item
+        android:id="@+id/nav_library"
+        android:icon="@drawable/library"
+        android:title="@string/menu_library" />
+    <item
+        android:id="@+id/nav_add"
+        android:icon="@android:drawable/ic_input_add"
+        android:title="@string/menu_add" />
 </menu>

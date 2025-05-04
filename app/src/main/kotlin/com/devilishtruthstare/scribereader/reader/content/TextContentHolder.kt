@@ -1,30 +1,23 @@
 package com.devilishtruthstare.scribereader.reader.content
 
 import android.content.Context
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Content
-import com.devilishtruthstare.scribereader.jmdict.Entry
-import com.devilishtruthstare.scribereader.jmdict.JMDict
-import com.devilishtruthstare.scribereader.jmdict.Sense
 import com.google.android.flexbox.FlexboxLayout
 import com.devilishtruthstare.scribereader.book.Token
 import com.devilishtruthstare.scribereader.database.FlashCard
-import com.devilishtruthstare.scribereader.database.UserStats
+import com.devilishtruthstare.scribereader.dictionary.DictionaryView
+import androidx.core.graphics.toColorInt
 
 
 class TextContentHolder(
@@ -35,20 +28,27 @@ class TextContentHolder(
         private const val PUNCTUATION_MARKER = "記号"
         private const val PARTICLE_MARKER = "助詞"
         private const val CONJUGATION_MARKER = "助動詞"
-        private const val EMPTY_MARKER = "*"
+        private const val PRE_NOUN_ADJECTIVAL = "連体詞"
+        private const val NOUN_MARKER = "名詞"
+        private const val VERB_MARKER = "動詞"
+        private const val AUX_VERB_MARKER = "助動詞"
+        private const val CONJUNCTION_MARKER = "接続詞"
+        private const val I_ADJECTIVE_MARKER = "形容詞"
+        private const val ADVERB_MARKER = "副詞"
+        private const val PREFIX_MARKER = "接頭詞"
+        private const val INTERJECTION_MARKER = "感動詞"
+        private const val FILLER_MARKER = "フィラー"
     }
     private val textContainer: FlexboxLayout = itemView.findViewById(R.id.container)
     private val ttsButton: ImageView = itemView.findViewById(R.id.tts_button)
 
     private lateinit var definitionView: View
-    private lateinit var entryContainer: LinearLayout
-    private lateinit var noEntriesFoundMessage: TextView
 
     private lateinit var flashCard: FlashCard
     fun bind(section: Content) {
         textContainer.removeAllViews()
         for(token in section.tokens) {
-            val button = LayoutInflater.from(itemView.context).inflate(R.layout.token_view, null)
+            val button = LayoutInflater.from(itemView.context).inflate(R.layout.component_token, null)
             val textView = button.findViewById<TextView>(R.id.token_text)
             val underline = button.findViewById<View>(R.id.underline)
 
@@ -56,9 +56,7 @@ class TextContentHolder(
             textView.textSize = 24f
 
             if (token.features.isEmpty() ||
-                token.features[0] == PUNCTUATION_MARKER ||
-                token.features[0] == PARTICLE_MARKER ||
-                token.features[0] == CONJUGATION_MARKER) {
+                token.features[0] in listOf(PUNCTUATION_MARKER, FILLER_MARKER, PARTICLE_MARKER, AUX_VERB_MARKER)) {
                 underline.visibility = View.GONE
             } else {
                 button.setOnClickListener { view ->
@@ -69,24 +67,34 @@ class TextContentHolder(
                     showDefinitionPopup(view, token)
                     true
                 }
+                val underlineColor = when (token.features[0]) {
+                    NOUN_MARKER -> "#d97706"           // amber for nouns
+                    PRE_NOUN_ADJECTIVAL -> "#f59e0b"   // lighter amber
+                    CONJUNCTION_MARKER -> "#10b981"    // teal for conjunctions
+                    VERB_MARKER -> "#3b82f6"           // blue for verbs
+                    CONJUGATION_MARKER -> "#60a5fa"    // lighter blue
+                    PREFIX_MARKER -> "#8b5cf6"         // violet for prefixes
+                    INTERJECTION_MARKER -> "#ec4899"   // pink for interjections
+                    I_ADJECTIVE_MARKER -> "#f43f5e"    // red for i-adjectives
+                    ADVERB_MARKER -> "#14b8a6"         // cyan for adverbs
+                    else -> "#6b7280"                  // gray fallback
+                }
+
+                underline.setBackgroundColor(underlineColor.toColorInt())
             }
             textContainer.addView(button)
         }
         flashCard = FlashCard(context)
         ttsButton.setOnClickListener {
-            // Set tts Player
+            section.onPlaySoundClick()
         }
     }
 
     private fun showDefinitionPopup(anchorView: View, token: Token) {
         // Create UI
-        definitionView = LayoutInflater.from(anchorView.context).inflate(R.layout.definition_popup, null)
-        entryContainer = definitionView.findViewById<LinearLayout>(R.id.entryContainer)
-        noEntriesFoundMessage = definitionView.findViewById<TextView>(R.id.noEntryFound)
-        val searchBar = definitionView.findViewById<EditText>(R.id.searchText)
-
+        definitionView = DictionaryView(context, startingSearch = Token.getSearchTerm(token))
         // Convert dp to pixels
-        val marginWidth = (25 * context.resources.displayMetrics.density).toInt()
+        val marginWidth = (20 * context.resources.displayMetrics.density).toInt()
 
         // Get screen dimensions
         val displayMetrics = context.resources.displayMetrics
@@ -102,107 +110,10 @@ class TextContentHolder(
         definitionWindow.isOutsideTouchable = true
 
         definitionWindow.showAtLocation(anchorView, Gravity.CENTER, 0, 0)
-
-
-        // Update UI
-        val searchTerm = getSearchWord(token)
-
-        searchBar.setText(searchTerm)
-        searchBar.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                displayResults(s.toString())
-            }
-
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-        })
-
-        displayResults(searchTerm)
     }
-
-    private fun displayResults(input: String) {
-        entryContainer.removeAllViews()
-        val entries = getEntries(input)
-
-        for(entry in entries) {
-            val entryView = getEntryView(entry, definitionView, input)
-            entryContainer.addView(entryView)
-        }
-        noEntriesFoundMessage.visibility = if (entries.isEmpty()) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
-    }
-
-    private fun getEntryView(entry: Entry, popupView: View, searchTerm: String): View {
-        val entryView = LayoutInflater.from(popupView.context).inflate(R.layout.entry_fragment, null)
-
-        val kanjiText = entryView.findViewById<TextView>(R.id.kanjiPrimary)
-        kanjiText.text = if (entry.kanji.isNotEmpty()) {
-            entry.kanji[0]
-        } else {
-            searchTerm
-        }
-
-        val kanaText = entryView.findViewById<TextView>(R.id.kanaPrimary)
-        kanaText.text = if (entry.kana.isNotEmpty()) {
-            entry.kana[0]
-        } else {
-            searchTerm
-        }
-
-        val addButton = entryView.findViewById<ImageButton>(R.id.add_button)
-        if (!flashCard.hasEntry(entry.entSeq)) {
-            addButton.setOnClickListener {
-                addButton.setImageResource(android.R.drawable.ic_input_get)
-                flashCard.addEntry(entry.entSeq, "LEARNING")
-            }
-        } else {
-            val status = flashCard.getEntry(entry.entSeq)
-            if (status == "LEARNING") {
-                addButton.setImageResource(android.R.drawable.ic_input_get)
-            } else if (status == "LEARNT") {
-                addButton.setImageResource(android.R.drawable.ic_delete)
-            }
-        }
-
-        val senseContainer = entryView.findViewById<LinearLayout>(R.id.senses)
-        entry.senses.forEachIndexed { index, sense ->
-            val senseView = getSenseView(index, sense, entryView)
-            senseContainer.addView(senseView)
-        }
-
-        return entryView
-    }
-    private fun getSenseView(index: Int, sense: Sense, entryView: View): View {
-        val senseView = LayoutInflater.from(entryView.context).inflate(R.layout.sense_fragment, null)
-        val posText = senseView.findViewById<TextView>(R.id.posText)
-        posText.text = sense.pos.toString()
-
-        val glossText = senseView.findViewById<TextView>(R.id.glossText)
-        val text = "${index+1}. ${sense.gloss}"
-        glossText.text = text
-
-        return senseView
-    }
-
-    private fun getSearchWord(token: Token): String {
-        return if (token.features.size >= 7 && token.features[6] != EMPTY_MARKER) {
-            token.features[6]
-        } else {
-            token.surface
-        }
-    }
-
-    private fun getEntries(searchingWord: String): List<Entry> {
-        return JMDict(context).getEntries(searchingWord)
-    }
-
     private fun showReadingPopup(anchorView: View, token: Token) {
         // Inflate the popup layout
-        val popupView = LayoutInflater.from(anchorView.context).inflate(R.layout.token_details_popup, null)
+        val popupView = LayoutInflater.from(anchorView.context).inflate(R.layout.popup_token_details, null)
 
         // Create the PopupWindow
         val popupWindow = PopupWindow(
@@ -258,5 +169,8 @@ class TextContentHolder(
 
         // Show the popup window offset from the button
         popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, xOffset, yOffset)
+
+
+        Log.d("TempToken", "${token.features}")
     }
 }

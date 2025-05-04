@@ -5,7 +5,8 @@ plugins {
 
 android {
     namespace = "com.devilishtruthstare.scribereader"
-    compileSdk = 34
+
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.devilishtruthstare.scribereader"
@@ -40,7 +41,7 @@ android {
 
 dependencies {
     implementation(libs.jsoup)
-    implementation("com.google.android.flexbox:flexbox:3.0.0")
+    implementation(libs.flexbox)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.okhttp)
     implementation(libs.gson)
@@ -53,6 +54,8 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(files("libs/tokenizer.aar"))
     implementation(libs.gson)
+
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -5,7 +5,7 @@ import nl.siegmann.epublib.domain.Resource
 data class Content (
     var isImage: Boolean,
     var content: String,
-    var tokens: List<Token>,
+    var tokens: MutableList<Token>,
 
     var imageResource: Resource?,
     var onPlaySoundClick: () -> Unit

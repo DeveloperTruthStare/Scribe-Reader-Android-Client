@@ -1,14 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ImageView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:padding="8dp"
+    android:id="@+id/item_image"
+    android:contentDescription="@string/image_description"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="8dp">
-    <ImageView
-        android:id="@+id/item_image"
-        android:contentDescription="@string/image_description"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scaleType="center" />
-</LinearLayout>
+    android:scaleType="fitCenter" />

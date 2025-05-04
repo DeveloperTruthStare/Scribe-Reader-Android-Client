@@ -7,4 +7,8 @@
     <color name="secondaryText">#8F8F8F</color>
     <color name="primaryText">#FFFFFF</color>
     <color name="popupBackground">#1f1f1f</color>
+
+    <color name="colorBackground">#121212</color> <!-- Dark mode background -->
+    <color name="colorCard">#1E1E1E</color> <!-- Darker card -->
+    <color name="colorPrimary">#BB86FC</color> <!-- Lighter purple for buttons in dark mode -->
 </resources>
