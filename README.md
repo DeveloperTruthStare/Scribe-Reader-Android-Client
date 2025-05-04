@@ -5,9 +5,9 @@ This is an app I'm making to help advanced langauge learners consume native Japa
 This takes heavy inspiration from Duolingo with it's gamified quizes throughout the reading.
 
 ### Core Features
-- [x] Loading .epub file in app 
-- [x] In app parsing of .epub file removing unneccessary text, and splitting into chapters
-- [x] In app tokenization of Japanese text, getting part of speech and dictionary form
+- [x] In app parsing of .epub file removing unneccessary text
+- [x] In app tokenization of Japanese text
+- [x] On device dictionary using JMDict (custom dictionary support planned no eta)
 - [x] Searchable dictionary from anywhere in the app with sentence tokenization and custom input
 - [x] Basic TTS to read out the story
 - [ ] SRS/Flash card system
@@ -34,9 +34,6 @@ This takes heavy inspiration from Duolingo with it's gamified quizes throughout 
 This application uses [JMDict](http://edrdg.org/jmdict/j_jmdict.html)
 
 ### This repository contains a few other slightly altered repositories because I couldn't figure out how to add them through gradle
-- [Kotori](https://github.com/wanasit/kotori) - for Japanese tokenization
+- [TokenizerMobileWrapper](https://github.com/DeveloperTruthStare/TokenizerMobileWrapper) / [Kogame](https://github.com/ikawaha/kagome/tree/v2/tokenizer) - for tokenization of Japanese text
 - [Epublib](https://github.com/psiegman/epublib/tree/master/epublib-core/src/main/java/nl/siegmann/epublib) - for parsing .epub files
 - [Jazzlib](https://github.com/psiegman/epublib/tree/master/epublib-core/src/main/java/net/sf/jazzlib) - used by Epublib for unzipping files
-
-### Free Icons
-<a href="https://www.flaticon.com/free-icons/add-to-library" title="add to library icons">Add to library icons created by littleicon - Flaticon</a>
