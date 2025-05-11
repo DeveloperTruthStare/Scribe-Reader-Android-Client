@@ -1,10 +1,9 @@
-package com.devilishtruthstare.scribereader.dictionary
+package com.devilishtruthstare.scribereader.dictionary.ui
 
 import android.content.Context
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.AttributeSet
-import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.inputmethod.EditorInfo
@@ -13,8 +12,16 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.children
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Token
+import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils
+import com.devilishtruthstare.scribereader.dictionary.Entry
+import com.devilishtruthstare.scribereader.dictionary.JMDict
+import com.devilishtruthstare.scribereader.dictionary.Sense
+import com.devilishtruthstare.scribereader.dictionary.ui.TokenButton
+import com.google.android.flexbox.FlexboxLayout
+import tokenizer.Tokenizer
 
 class DictionaryView @JvmOverloads constructor(
     context: Context,
@@ -24,9 +31,9 @@ class DictionaryView @JvmOverloads constructor(
     private val entryContainer: LinearLayout
     private val noEntriesFoundMessage: TextView
     private val searchBar: EditText
-    private val tokenContainer: LinearLayout
-    private val t = tokenizer.Tokenizer.newTokenizer()
-    private val jmDict = JMDict.getInstance(context)
+    private val tokenContainer: FlexboxLayout
+    private val t = Tokenizer.newTokenizer()
+    private val jmDict = JMDict.Companion.getInstance(context)
     private var searchResults = mutableListOf<Pair<Token, List<Entry>>>()
 
     init {
@@ -61,19 +68,20 @@ class DictionaryView @JvmOverloads constructor(
 
     private fun displayTokenization(input: String) {
         val tokensJson = t.tokenize(input)
-        val tokens = DictionaryUtils.jsonToTokens(tokensJson)
+        val tokens = DictionaryUtils.Companion.jsonToTokens(tokensJson)
 
         searchResults.clear()
         tokenContainer.removeAllViews()
 
         for ((index, token) in tokens.withIndex()) {
-            val entries = jmDict.getEntries(Token.getSearchTerm(token))
+            val entries = jmDict.getEntries(Token.Companion.getSearchTerm(token))
             searchResults.add(Pair(token, entries))
 
             val tokenButton = TokenButton(context, null, token) {
                 displayResults(index)
+                unselectAllTokens()
             }
-
+            if (index == 0) tokenButton.setSelected()
             tokenContainer.addView(tokenButton)
         }
 
@@ -85,7 +93,11 @@ class DictionaryView @JvmOverloads constructor(
             noEntriesFoundMessage.visibility = VISIBLE
         }
     }
-
+    private fun unselectAllTokens() {
+        for (tokenButton in tokenContainer.children) {
+            (tokenButton as TokenButton).setUnselected()
+        }
+    }
     private fun displayResults(index: Int) {
         if (index >= searchResults.size) {
             return
@@ -94,7 +106,7 @@ class DictionaryView @JvmOverloads constructor(
         val token = searchResults[index].first
         val entries = searchResults[index].second
 
-        val searchTerm = Token.getSearchTerm(token)
+        val searchTerm = Token.Companion.getSearchTerm(token)
 
         entryContainer.removeAllViews()
         for (entry in entries) {
@@ -111,9 +123,27 @@ class DictionaryView @JvmOverloads constructor(
             LayoutInflater.from(context).inflate(R.layout.view_entry, this, true)
             exampleSentenceButton = findViewById(R.id.viewExampleSentences)
             exampleSentenceButton.setOnClickListener {
-                val exampleSentences = JMDict.getInstance(context).getExampleSentences(entry!!.entSeq)
+                val exampleSentences = JMDict.Companion.getInstance(context).getExampleSentences(entry!!.entSeq)
                 for (sentence in exampleSentences) {
-                    Log.d("Example Sentence for ${entry.kanji}", sentence)
+                    val view = LayoutInflater.from(context).inflate(R.layout.item_text, this, true)
+                    var part1 = ""
+                    var part2 = ""
+                    var searchToken: Token? = null
+                    var found = false
+                    for (token in sentence) {
+                        val searchTerm = Token.Companion.getSearchTerm(token)
+                        if (searchTerm in entry.kanji || searchTerm in entry.kana) {
+                            found = true
+                            searchToken = token
+                        } else {
+                            if (found) {
+                                part1 += token.surface
+                            } else {
+                                part2 += token.surface
+                            }
+                        }
+                    }
+
                 }
             }
 
@@ -144,7 +174,7 @@ class DictionaryView @JvmOverloads constructor(
             posText = findViewById(R.id.posText)
 
             for (i in sense!!.pos.indices) {
-                sense.pos[i] = DictionaryUtils.convertPOS(sense.pos[i])
+                sense.pos[i] = DictionaryUtils.Companion.convertPOS(sense.pos[i])
             }
             posText.text = sense.pos.toString()
 

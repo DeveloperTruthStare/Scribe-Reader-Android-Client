@@ -1,10 +1,11 @@
-package com.devilishtruthstare.scribereader
+package com.devilishtruthstare.scribereader.mian.uploader
 
 import android.app.AlertDialog
 import android.content.ContentResolver
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
@@ -12,24 +13,28 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.devilishtruthstare.scribereader.book.Book
+import com.devilishtruthstare.scribereader.R
+import com.devilishtruthstare.scribereader.book.utils.BookParser
 import com.devilishtruthstare.scribereader.database.RecordKeeper
 import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils
 import com.devilishtruthstare.scribereader.dictionary.JMDict
-import com.devilishtruthstare.scribereader.library.LibraryFragment
+import com.devilishtruthstare.scribereader.mian.library.LibraryFragment
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import nl.siegmann.epublib.domain.Author
+import nl.siegmann.epublib.domain.Book
 import nl.siegmann.epublib.domain.Resource
 import nl.siegmann.epublib.epub.EpubReader
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import kotlin.collections.iterator
 
 class UploadFragment : Fragment(R.layout.fragment_uploader) {
     private lateinit var recordKeeper: RecordKeeper
     private lateinit var bookUri: Uri
-    private lateinit var book: nl.siegmann.epublib.domain.Book
+    private lateinit var book: Book
     private lateinit var author: Author
     private lateinit var dialog: AlertDialog
     private lateinit var dialogProgressBar: ProgressBar
@@ -47,7 +52,6 @@ class UploadFragment : Fragment(R.layout.fragment_uploader) {
         val inputStream = requireContext().contentResolver.openInputStream(bookUri)
             ?: throw IOException("Failed to open input stream")
         book = epubReader.readEpub(inputStream)
-
         if (recordKeeper.getBook(book.title) != null) {
             navigateToLibrary()
             return
@@ -58,7 +62,13 @@ class UploadFragment : Fragment(R.layout.fragment_uploader) {
         val imageView = view.findViewById<ImageView>(R.id.bookCover)
         val bitmap = BitmapFactory.decodeStream(coverImage.inputStream)
         imageView.setImageBitmap(bitmap)
-        imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+
+        imageView.post {
+            val aspectRatio = bitmap?.let { it.width.toFloat() / it.height.toFloat() } ?: 1f
+            val imageHeight = imageView.width.toFloat() / aspectRatio
+            imageView.layoutParams.height = imageHeight.toInt()
+            imageView.requestLayout()
+        }
 
 
         author = book.metadata.authors[0]
@@ -71,6 +81,7 @@ class UploadFragment : Fragment(R.layout.fragment_uploader) {
         view.findViewById<Button>(R.id.addToLibraryButton).setOnClickListener {
             processBook()
         }
+
     }
     private fun navigateToLibrary() {
         requireActivity().supportFragmentManager.beginTransaction()
@@ -87,18 +98,19 @@ class UploadFragment : Fragment(R.layout.fragment_uploader) {
         }
 
         // Copy to internal directory
-        val rBook = Book().apply {
+        var rBook = com.devilishtruthstare.scribereader.book.Book().apply {
             title = book.title
             author = "${book.metadata.authors.firstOrNull()?.lastname ?: ""} ${book.metadata.authors.firstOrNull()?.firstname ?: ""}"
             language = book.metadata.language
             fileLocation = "books/${book.title}/${book.title}.epub"
         }
 
+
         copyFileToDestination(requireContext().contentResolver, bookUri, rBook.fileLocation)
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            val bookDto = DictionaryUtils.parseBook(requireContext(), book.title).await()
-            var totalTokens = bookDto.chapters.sumOf { it.content.size }
+            rBook = BookParser.parseBook(requireContext(), rBook).await()
+            var totalTokens = rBook.chapters.sumOf { it.content.size }
 
             requireActivity().runOnUiThread {
                 dialogProgressBar.max = totalTokens
@@ -108,7 +120,7 @@ class UploadFragment : Fragment(R.layout.fragment_uploader) {
             var tokensAdded = 0
             setProgress(tokensAdded, totalTokens)
             JMDict.getInstance(requireContext()).insertBook(
-                bookDto,
+                rBook,
                 onTokenAdded = {
                     tokensAdded++
                     setProgress(tokensAdded, totalTokens)
@@ -131,7 +143,6 @@ class UploadFragment : Fragment(R.layout.fragment_uploader) {
             dialogProgressTitle.text = getString(R.string.uploading_processing_book, percent)
         }
     }
-
     private fun copyFileToDestination(contentResolver: ContentResolver, uri: Uri, destination: String) {
         try {
             // Get the InputStream from the URI
@@ -170,17 +181,20 @@ class UploadFragment : Fragment(R.layout.fragment_uploader) {
         dialogProgressTitle = view.findViewById(R.id.dialogTitle)
 
         dialog = builder.create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog.show()
     }
-    private fun findCoverResource(book: nl.siegmann.epublib.domain.Book) : Resource {
+    private fun findCoverResource(book: Book) : Resource {
         if (book.coverImage != null) {
             return book.coverImage
         }
 
         for((_, resource) in book.resources.resourceMap) {
-            if (resource.href.contains("cover"))
+            if (File(resource.href).nameWithoutExtension == "cover") {
                 return resource
+            }
         }
+        Log.d("CoverImage", "Could not find Cover Image")
         throw IOException("Could not find cover image")
     }
 }

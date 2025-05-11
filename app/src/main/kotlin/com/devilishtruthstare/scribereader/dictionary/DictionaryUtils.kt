@@ -1,24 +1,10 @@
 package com.devilishtruthstare.scribereader.dictionary
 
-import android.content.Context
-import com.devilishtruthstare.scribereader.book.Book
-import com.devilishtruthstare.scribereader.book.Chapter
-import com.devilishtruthstare.scribereader.book.Content
 import com.devilishtruthstare.scribereader.book.Token
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import nl.siegmann.epublib.domain.Resource
-import nl.siegmann.epublib.epub.EpubReader
-import org.jsoup.nodes.Element
-import java.io.File
-import java.io.FileInputStream
 import java.io.InputStream
 import java.io.InputStreamReader
-import kotlin.collections.iterator
-import kotlin.collections.set
-import kotlinx.coroutines.*
-import org.jsoup.Jsoup
-
 
 class DictionaryUtils {
     companion object {
@@ -133,95 +119,6 @@ class DictionaryUtils {
             val gson = Gson()
             val type = object : TypeToken<List<Token>>() {}.type
             return gson.fromJson(jsonString, type)
-        }
-        fun parseBook(context: Context, bookTitle: String): Deferred<Book>{
-            return CoroutineScope(Dispatchers.Default).async {
-                BookParser(context).parseBook(bookTitle)
-            }
-        }
-        private class BookParser(private val context: Context) {
-            private val t: tokenizer.Tokenizer_ = tokenizer.Tokenizer.newTokenizer()
-            private val imageMap: MutableMap<String, Resource> = mutableMapOf()
-
-            suspend fun parseBook(bookTitle: String): Book = withContext(Dispatchers.Default){
-                val inputStream: InputStream = FileInputStream(File(context.filesDir, "books/${bookTitle}/${bookTitle}.epub"))
-                val book = EpubReader().readEpub(inputStream)
-                val bookDto = Book()
-                bookDto.title = bookTitle
-
-                val imageExtensions = setOf(".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")
-                for((_, resource) in book.resources.resourceMap) {
-                    if (resource.mediaType.defaultExtension in imageExtensions) {
-                        imageMap[getFileNameWithoutExtension(resource.href)] = resource
-                    }
-                }
-
-                val resources = book.spine.spineReferences.map { it.resource }
-                val results = resources.map { resource ->
-                    async {
-                        val text = resource.reader.readText().trim()
-                        val body = Jsoup.parse(text).body()
-                        if (body.classNames().any { it in listOf("p-caution", "p-colophon") }) return@async null
-
-                        return@async traverseNodesSequence(body).toList()
-                    }
-                }
-
-                val parsedSections = results.awaitAll()
-
-                bookDto.chapters.add(Chapter())
-                for (sectionList in parsedSections) {
-                    sectionList?.let {
-                        bookDto.chapters[bookDto.chapters.size - 1].content.addAll(it)
-                    }
-                }
-                bookDto.chapters.removeIf { it.content.isEmpty() }
-
-                return@withContext bookDto
-            }
-
-            private fun traverseNodesSequence(element: Element): Sequence<Content> = sequence {
-                if (element.tagName() == "p") {
-                    parseParagraph(element)?.let { yield(it) }
-                    return@sequence
-                }
-                for (child in element.children()) {
-                    yieldAll(traverseNodesSequence(child))
-                }
-            }
-
-            private fun parseParagraph(element: Element): Content? {
-                val result = StringBuilder()
-                var imageContent: Content? = null
-
-                for (node in element.childNodes()) {
-                    when (node.nodeName()) {
-                        "ruby" -> result.append((node as Element).ownText())
-                        "#text" -> result.append(node.toString())
-                        "img", "image" -> {
-                            val src = (node as Element).attr("src").ifBlank { node.attr("href") }
-                            if (src.isNotBlank()) imageContent = createImageSection(src)
-                        }
-                    }
-                }
-
-                return when {
-                    imageContent != null -> imageContent
-                    result.trim().isNotEmpty() -> createTextSection(result.toString().trim())
-                    else -> null
-                }
-            }
-
-            private fun createTextSection(text: String): Content {
-                val tokensJson = t.tokenize(text)
-                val tokens = jsonToTokens(tokensJson)
-                return Content(false, text, tokens, null) { }
-            }
-            private fun createImageSection(src: String): Content =
-                Content(true, src, mutableListOf(), imageMap[getFileNameWithoutExtension(src)]!!) { }
-
-            private fun getFileNameWithoutExtension(filePath: String): String = File(filePath).nameWithoutExtension
-
         }
     }
 }

@@ -35,7 +35,7 @@ class BookContentAdapter(
         return when (viewType) {
             TYPE_TEXT -> {
                 val view = LayoutInflater.from(parent.context).inflate(R.layout.item_text, parent, false)
-                TextContentHolder(view, context)
+                TextContentHolder(view)
             }
             TYPE_IMAGE -> {
                 val view = LayoutInflater.from(parent.context).inflate(R.layout.item_image, parent, false)
@@ -62,4 +62,8 @@ class BookContentAdapter(
     }
 
     override fun getItemCount(): Int = contentList.size + 1
+
+    fun clear() {
+
+    }
 }

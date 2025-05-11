@@ -1,14 +1,16 @@
-package com.devilishtruthstare.scribereader
+package com.devilishtruthstare.scribereader.mian
 
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import com.devilishtruthstare.scribereader.flashcards.AnkiFragment
-import com.devilishtruthstare.scribereader.home.HomeFragment
-import com.devilishtruthstare.scribereader.library.LibraryFragment
+import androidx.fragment.app.FragmentTransaction
+import com.devilishtruthstare.scribereader.R
+import com.devilishtruthstare.scribereader.mian.anki.AnkiFragment
+import com.devilishtruthstare.scribereader.mian.home.HomeFragment
+import com.devilishtruthstare.scribereader.mian.library.LibraryFragment
+import com.devilishtruthstare.scribereader.mian.uploader.UploadFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -17,6 +19,7 @@ class MainActivity : AppCompatActivity() {
     private val homeFragment: HomeFragment = HomeFragment()
     private val ankiFragment: AnkiFragment = AnkiFragment()
     private val libraryFragment: LibraryFragment = LibraryFragment()
+    private var selectedItem: Int = R.id.nav_home
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +41,9 @@ class MainActivity : AppCompatActivity() {
                 else -> homeFragment
             }
             if (it.itemId != R.id.nav_add) {
+                selectedItem = it.itemId
                 supportFragmentManager.beginTransaction()
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE) // No transition
                     .replace(R.id.fragment_container, fragment)
                     .commit()
             } else {
@@ -51,13 +56,13 @@ class MainActivity : AppCompatActivity() {
     private fun createFilePickerLauncher(): ActivityResultLauncher<String> {
         return registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             if (uri != null) {
-                val fragment = UploadFragment()
-                fragment.setBook(uri)
+                val uploadFragment = UploadFragment()
+                uploadFragment.setBook(uri)
                 supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
+                    .replace(R.id.fragment_container, uploadFragment)
                     .commit()
             } else {
-                Log.d("FileSelector", "No file selected")
+                bottomNav.selectedItemId = selectedItem
             }
         }
     }

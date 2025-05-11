@@ -19,8 +19,11 @@
 
             <ImageView
                 android:id="@+id/bookCover"
-                android:layout_width="150dp"
-                android:layout_height="200dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="50dp"
+                android:layout_marginEnd="50dp"
+                android:scaleType="fitCenter"
                 android:contentDescription="@string/description_bookCover" />
 
             <TextView
@@ -29,7 +32,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="36sp"
                 android:textStyle="bold"
-                android:layout_marginTop="16dp" />
+                android:layout_marginTop="0dp" />
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"

@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import com.devilishtruthstare.scribereader.MainActivity
+import com.devilishtruthstare.scribereader.mian.MainActivity
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.dictionary.JMDict
 import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils

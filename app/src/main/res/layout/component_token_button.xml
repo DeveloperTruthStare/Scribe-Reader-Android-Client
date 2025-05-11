@@ -11,17 +11,27 @@
         android:textSize="11sp"
         android:textColor="@color/primaryText"
         android:text="@string/placeholder_furigana"
+        android:layout_gravity="center"
         android:id="@+id/furigana" />
-    <TextView
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/display"
-        android:textColor="@color/primaryText"
-        android:text="@string/placeholder_kanji"
-        android:textSize="16sp"
-        android:layout_marginBottom="5dp"/>
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/primaryText" />
+        android:orientation="vertical"
+        android:layout_gravity="center">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/display"
+            android:textColor="@color/primaryText"
+            android:text="@string/placeholder_kanji"
+            android:textSize="16sp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="5dp"/>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/primaryText"
+            android:id="@+id/underline"/>
+
+    </LinearLayout>
 </LinearLayout>

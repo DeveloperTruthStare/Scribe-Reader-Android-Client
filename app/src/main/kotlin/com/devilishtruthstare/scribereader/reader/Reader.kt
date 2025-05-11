@@ -18,8 +18,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Book
 import com.devilishtruthstare.scribereader.book.Content
+import com.devilishtruthstare.scribereader.book.utils.BookParser
 import com.devilishtruthstare.scribereader.database.RecordKeeper
-import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils
+import com.devilishtruthstare.scribereader.mian.MainActivity
 import com.devilishtruthstare.scribereader.reader.content.BookContentAdapter
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -30,9 +31,11 @@ class Reader : AppCompatActivity(), OnInitListener {
         const val EXTRA_BOOK_ID = "BOOK_ID"
         private const val NEXT_TEXT = "次"
         private const val NEXT_CHAPTER_TEXT = "次の第"
+        private const val FINISH_BOOK_TEXT = "Finish Book"
     }
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
+    private lateinit var titleText: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var progressText: TextView
     private lateinit var continueButton: Button
@@ -73,6 +76,7 @@ class Reader : AppCompatActivity(), OnInitListener {
         adapter = BookContentAdapter(contentList, this)
         recyclerView.adapter = adapter
 
+        titleText = findViewById(R.id.reader_title)
         progressBar = findViewById(R.id.progressBar)
         progressText = findViewById(R.id.progressText)
 
@@ -83,54 +87,59 @@ class Reader : AppCompatActivity(), OnInitListener {
         }
 
         val recordKeeper = RecordKeeper.getInstance(this)
-        val bookRecord = recordKeeper.getBookById(bookId)!!
+        book = recordKeeper.getBookById(bookId)!!
+        titleText.text = book.title
+        if (book.status == RecordKeeper.STATUS_NOT_STARTED) {
+            recordKeeper.startBook(book.bookId)
+        }
         recordKeeper.addOpenHistory(bookId)
         lifecycleScope.launch {
-            book = DictionaryUtils.parseBook(this@Reader, bookRecord.title).await()
-            book.bookId = bookRecord.bookId
-            book.currentSection = bookRecord.currentSection
-            book.currentChapter = bookRecord.currentChapter
+            book = BookParser.parseBook(this@Reader, book).await()
+            for ((index, chapter) in book.chapters.withIndex()) {
+                Log.d("ReaderActivity", "Chapter: ${index+1} Paragraphs: ${chapter.content.size}")
+            }
             progressBar.max = book.chapters.size
             updateProgressBar()
+            for(i in 0..book.currentSection) {
+                val section = book.chapters[book.currentChapter].content[i]
+                (!section.isImage).let {
+                    section.onPlaySoundClick = {
+                        if (ttsReady)
+                            tts.speak(section.content, TextToSpeech.QUEUE_FLUSH, null, null)
+                    }
+                }
+                contentList.add(section)
+                adapter.notifyItemInserted(i)
+            }
             continueButton.isEnabled = true
-            nextLineClick()
         }
-    }
-
-    private fun updateProgressBar() {
-        progressBar.progress = book.currentSection
-        progressBar.max = book.chapters.size
-
-        val text = "Chapter: ${book.currentChapter}: ${book.currentSection+1}/${book.chapters[book.currentChapter].content.size}"
-        progressText.text = text
     }
 
     private fun nextLineClick () {
-        if (book.currentSection == book.chapters[book.currentChapter].content.size-1) {
-            if (book.currentChapter == book.chapters.size-1) {
-                Log.e("TODO", "Book finished")
-                // Intent go to library activity
-                return
-            }
-
+        book.currentSection++
+        if (book.currentSection >= book.chapters[book.currentChapter].content.size) {
             book.currentChapter++
             book.currentSection = 0
             clearContent()
-
-            continueButton.text = NEXT_TEXT
             progressBar.max = book.chapters[book.currentChapter].content.size
-        }
+            continueButton.text = NEXT_TEXT
 
-        val section = book.chapters[book.currentChapter].content[book.currentSection++]
-        contentList.add(section)
+            if (book.currentChapter >= book.chapters.size) {
+                RecordKeeper.getInstance(this).finishBook(book.bookId)
+                startActivity(Intent(this, MainActivity::class.java))
+            }
+        }
+        val nextSection = book.chapters[book.currentChapter].content[book.currentSection]
+        contentList.add(nextSection)
         adapter.notifyItemInserted(contentList.size-1)
 
-        section.onPlaySoundClick = {
-            if (ttsReady && !section.isImage)
-                tts.speak(section.content, TextToSpeech.QUEUE_FLUSH, null, null)
+        if (!nextSection.isImage) {
+            nextSection.onPlaySoundClick = {
+                if (ttsReady)
+                    tts.speak(nextSection.content, TextToSpeech.QUEUE_FLUSH, null, null)
+            }
+            nextSection.onPlaySoundClick()
         }
-
-        section.onPlaySoundClick()
 
         linearLayoutManager.scrollToPosition(contentList.size)
 
@@ -142,9 +151,19 @@ class Reader : AppCompatActivity(), OnInitListener {
             book.currentSection
         )
 
-        if (book.currentChapter == book.chapters.size-1) {
-            continueButton.text = NEXT_CHAPTER_TEXT
+        if (book.currentSection == book.chapters[book.currentChapter].content.size-1) {
+            if (book.currentChapter == book.chapters.size-1) {
+                continueButton.text = FINISH_BOOK_TEXT
+            } else {
+                continueButton.text = NEXT_CHAPTER_TEXT
+            }
         }
+    }
+
+    private fun updateProgressBar() {
+        progressBar.progress = book.currentSection
+        val text = "Section ${book.currentChapter+1}: ${book.currentSection+1}/${book.chapters[book.currentChapter].content.size}"
+        progressText.text = text
     }
     private fun clearContent() {
         val previousContentSize = contentList.size

@@ -17,7 +17,7 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
             }
         }
         private const val DATABASE_NAME = "DownloadedBooks.db"
-        private const val DATABASE_VERSION = 3
+        private const val DATABASE_VERSION = 1
 
         private const val TABLE_BOOKS = "DownloadedBooks"
         private const val COL_BOOK_ID = "BookId"
@@ -27,6 +27,14 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         private const val COL_CHAPTER = "Chapter"
         private const val COL_SECTION = "Section"
         private const val COL_LAST_OPENED = "LastOpened"
+        private const val COL_AUTHOR = "Author"
+        private const val COL_LANGUAGE = "Language"
+        private const val COL_STATUS = "Status"
+        private const val COL_PREFER_VERTICAL_TEXT = "VerticalText"
+
+        const val STATUS_NOT_STARTED = "NOT_STARTED"
+        const val STATUS_IN_PROGRESS = "IN_PROGRESS"
+        const val STATUS_FINISHED = "FINISHED"
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
@@ -38,6 +46,10 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
                 $COL_FILE_LOCATION TEXT NOT NULL,
                 $COL_CHAPTER INT NOT NULL,
                 $COL_SECTION INT NOT NULL,
+                $COL_AUTHOR TEXT NOT NULL,
+                $COL_LANGUAGE TEXT NOT NULL,
+                $COL_STATUS TEXT NOT NULL,
+                $COL_PREFER_VERTICAL_TEXT TEXT DEFAULT "${Book.VERTICAL_TEXT_DEFAULT}",
                 $COL_LAST_OPENED DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """
@@ -57,24 +69,13 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
             put(COL_FILE_LOCATION, book.fileLocation)
             put(COL_CHAPTER, 0)
             put(COL_SECTION, 0)
+            put(COL_AUTHOR, book.author)
+            put(COL_STATUS, STATUS_NOT_STARTED)
+            put(COL_LANGUAGE, book.language)
         }
         db.insert(TABLE_BOOKS, null, contentValues)
     }
 
-    fun onBookDeleted(book: Book) {
-        val db = this.writableDatabase
-        val whereClause = "$COL_TITLE = ?"
-        db.delete(TABLE_BOOKS, whereClause, arrayOf(book.title))
-    }
-    fun hasBook(title: String): Boolean {
-        val db = this.readableDatabase
-        val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_BOOKS WHERE $COL_TITLE = ? LIMIT 1", arrayOf(title)
-        )
-        val foundBook = cursor.moveToFirst()
-        cursor.close()
-        return foundBook
-    }
     fun getBook(title: String) : Book? {
         val db = this.readableDatabase
         val cursor = db.rawQuery(
@@ -85,7 +86,7 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         }
     }
     fun getBookList() : List<Book> {
-        val query = "SELECT * FROM $TABLE_BOOKS ORDER BY $COL_TITLE"
+        val query = "SELECT * FROM $TABLE_BOOKS ORDER BY $COL_AUTHOR, $COL_TITLE"
         return readableDatabase.rawQuery(query, null).use { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
@@ -96,7 +97,7 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
     }
 
     fun getBookListByRecency() : List<Book> {
-        val query = "SELECT * FROM $TABLE_BOOKS ORDER BY $COL_LAST_OPENED DESC LIMIT 2"
+        val query = "SELECT * FROM $TABLE_BOOKS ORDER BY $COL_LAST_OPENED DESC LIMIT 3"
         return readableDatabase.rawQuery(query, null).use { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
@@ -122,6 +123,17 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
             "UPDATE $TABLE_BOOKS SET $COL_CHAPTER = ?, $COL_SECTION = ? WHERE $COL_BOOK_ID = ?", arrayOf(currentChapter, currentSection, bookId)
         )
     }
+    fun startBook(bookId: Int) {
+        setStatus(bookId, STATUS_IN_PROGRESS)
+    }
+    fun finishBook(bookId: Int) {
+        setStatus(bookId, STATUS_FINISHED)
+    }
+    private fun setStatus(bookId: Int, status: String) {
+        writableDatabase.execSQL(
+            "UPDATE $TABLE_BOOKS SET $COL_STATUS = ? WHERE $COL_BOOK_ID = ?", arrayOf(status, bookId.toString())
+        )
+    }
 
     private fun loadBook(cursor: Cursor) = Book().apply {
         bookId = cursor.getInt(cursor.getColumnIndexOrThrow(COL_BOOK_ID))
@@ -130,5 +142,8 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         fileLocation = cursor.getString(cursor.getColumnIndexOrThrow(COL_FILE_LOCATION))
         currentChapter = cursor.getInt(cursor.getColumnIndexOrThrow(COL_CHAPTER))
         currentSection = cursor.getInt(cursor.getColumnIndexOrThrow(COL_SECTION))
+        status = cursor.getString(cursor.getColumnIndexOrThrow(COL_STATUS))
+        author = cursor.getString(cursor.getColumnIndexOrThrow(COL_AUTHOR))
+        verticalTextPreference = cursor.getString(cursor.getColumnIndexOrThrow(COL_PREFER_VERTICAL_TEXT))
     }
 }

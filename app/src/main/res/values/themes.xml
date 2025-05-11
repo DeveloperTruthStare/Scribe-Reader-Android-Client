@@ -1,9 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.ScribeReader" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.ScribeReader" parent="Theme.Material3.DayNight">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:navigationBarColor">@color/colorBackground</item>
+        <item name="android:statusBarColor">@color/colorBackground</item>
+        <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
     </style>
-
-    <style name="Theme.ScribeReader" parent="Base.Theme.ScribeReader" />
 </resources>

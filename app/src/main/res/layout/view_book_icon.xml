@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android"
-    app:cardCornerRadius="15dp"
+    app:cardCornerRadius="10dp"
     android:layout_rowWeight="1"
     android:layout_columnWeight="1"
     app:cardElevation="10dp"
@@ -16,4 +16,20 @@
         android:contentDescription="@string/book_cover_description"
         android:src="@drawable/missing_book_cover"
         android:scaleType="fitCenter"/>
+    <ImageView
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_gravity="bottom|end"
+        android:src="@drawable/circle"
+        app:tint="@color/dark_shadow"
+        android:alpha="0.5"
+        android:foregroundTint="@color/dark_shadow"/>
+    <ImageView
+    android:layout_width="25dp"
+    android:layout_height="25dp"
+    android:id="@+id/book_status"
+    android:layout_gravity="bottom|end"
+    android:src="@drawable/play_arrow"
+    app:tint="@color/teal_200"
+    android:foregroundTint="@color/dark_shadow"/>
 </androidx.cardview.widget.CardView>

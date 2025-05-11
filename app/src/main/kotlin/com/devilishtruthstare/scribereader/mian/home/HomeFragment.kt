@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.home
+package com.devilishtruthstare.scribereader.mian.home
 
 import android.os.Bundle
 import android.view.View
@@ -6,7 +6,7 @@ import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.database.RecordKeeper
-import com.devilishtruthstare.scribereader.library.BookView
+import com.devilishtruthstare.scribereader.mian.library.bookicon.BookView
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var recentBooksContainer: LinearLayout
@@ -20,7 +20,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun loadRecentBooks() {
         recentBooksContainer.removeAllViews()
 
-        val books = RecordKeeper.getInstance(requireContext()).getBookListByRecency()
+        val books = RecordKeeper.Companion.getInstance(requireContext()).getBookListByRecency()
 
         for (book in books) {
             val bookIcon = BookView(requireContext(), book = book)

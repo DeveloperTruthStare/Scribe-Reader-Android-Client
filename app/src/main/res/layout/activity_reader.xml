@@ -8,17 +8,25 @@
     android:background="@color/background"
     android:id="@+id/main"
     tools:context=".reader.Reader">
-
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/reader_title"
+        android:text="@string/placeholder_book_title"
+        android:gravity="center"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"/>
     <ProgressBar
         android:id="@id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="0dp"
         android:layout_marginStart="50dp"
         android:layout_marginEnd="50dp"
         android:progressTint="@android:color/holo_green_dark"
         android:progressDrawable="@drawable/rounded_progress_bar"
+        android:layout_below="@+id/reader_title"
         android:max="1000"
         android:progress="200"
         android:scaleY="1"/>

@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="foreground">#FFFFFFFF</color>
-    <color name="background">#FF000000</color>
     <color name="delete">#ff0000</color>
     <color name="spacer">#ffffff</color>
     <color name="secondaryText">#8F8F8F</color>
     <color name="primaryText">#FFFFFF</color>
     <color name="popupBackground">#1f1f1f</color>
+    <color name="secondaryBackground">#363f36</color>
+
+    <color name="background_contrast">#000000</color>
+    <color name="background">#121212</color> <!-- Dark Background -->
+    <color name="header_background">#1E1E1E</color> <!-- Dark Grey Header -->
+    <color name="content_background">#2C2C2C</color> <!-- Darker Grey content -->
+    <color name="nav_bar">#4F46E5</color>
+
+    <color name="dark_shadow">#000000</color>
 
     <color name="colorBackground">#121212</color> <!-- Dark mode background -->
     <color name="colorCard">#1E1E1E</color> <!-- Darker card -->

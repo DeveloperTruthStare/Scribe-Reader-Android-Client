@@ -54,11 +54,11 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         """
 
         private const val TABLE_BOOKS = "Books"
-        private const val COL_BOOKS_ID = "BookId"
+        private const val COL_BOOK_ID = "BookId"
         private const val COL_BOOK_TITLE = "BookTitle"
         private const val CREATE_BOOKS_TABLE_SQL = """
             CREATE TABLE IF NOT EXISTS $TABLE_BOOKS (
-                $COL_BOOKS_ID INTEGER PRIMARY KEY,
+                $COL_BOOK_ID INTEGER PRIMARY KEY,
                 $COL_BOOK_TITLE TEXT NOT NULL
             )
         """
@@ -69,7 +69,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         private const val CREATE_CHAPTER_TABLE_SQL = """
             CREATE TABLE IF NOT EXISTS $TABLE_CHAPTERS (
                 $COL_CHAPTER_ID INTEGER PRIMARY KEY,
-                $COL_BOOKS_ID INTEGER NOT NULL,
+                $COL_BOOK_ID INTEGER NOT NULL,
                 $COL_CHAPTER_POSITION INT NOT NULL
             )
         """
@@ -95,6 +95,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         private const val COL_FEATURES = "Features"
         private const val COL_TOKEN_POSITION = "TokenPosition"
         private const val COL_TOKEN_SURFACE = "TokenSurface"
+        private const val COL_POS_PRIMARY = "PrimaryPartOfSpeech"
         private const val CREATE_TOKENS_TABLE_SQL = """
             CREATE TABLE IF NOT EXISTS $TABLE_TOKENS (
                 $COL_TOKEN_ID INTEGER PRIMARY KEY,
@@ -102,7 +103,8 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                 $COL_DICTIONARY_FORM TEXT NOT NULL,
                 $COL_FEATURES TEXT NOT NULL,
                 $COL_TOKEN_POSITION INTEGER NOT NULL,
-                $COL_TOKEN_SURFACE TEXT NOT NULL
+                $COL_TOKEN_SURFACE TEXT NOT NULL,
+                $COL_POS_PRIMARY TEXT NOT NULL
             )
         """
 
@@ -239,7 +241,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                 for ((c_i, chapter) in book.chapters.withIndex()) {
                     val chapterValues = ContentValues().apply {
                         put(COL_CHAPTER_POSITION, c_i)
-                        put(COL_BOOKS_ID, bookId)
+                        put(COL_BOOK_ID, bookId)
                     }
                     val chapterId = db.insert(TABLE_CHAPTERS, null, chapterValues)
 
@@ -260,6 +262,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                                 put(COL_DICTIONARY_FORM, tokenSearchForm)
                                 put(COL_PARAGRAPH_ID, paragraphId)
                                 put(COL_TOKEN_SURFACE, token.surface)
+                                put(COL_POS_PRIMARY, token.features[0])
                             }
                             val tokenId = db.insert(TABLE_TOKENS, null, tokenValues)
 
@@ -278,21 +281,60 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
             }
         }
     }
-    fun getExampleSentences(entrySeq: Int): List<String> {
+
+    fun getUniqueTokenList(bookId: Int): List<String> {
+        val query = """
+            WITH RankedTokens AS (
+                SELECT
+                    t.$COL_DICTIONARY_FORM,
+                    t.$COL_TOKEN_POSITION,
+                    p.$COL_PARAGRAPH_POSITION,
+                    c.$COL_CHAPTER_POSITION,
+                    ROW_NUMBER() OVER (PARTITION BY t.$COL_DICTIONARY_FORM ORDER BY c.$COL_CHAPTER_POSITION, p.$COL_PARAGRAPH_POSITION, t.$COL_TOKEN_POSITION) AS rn
+                FROM
+                    $TABLE_TOKENS t
+                JOIN $TABLE_PARAGRAPHS p ON t.$COL_PARAGRAPH_ID = p.$COL_PARAGRAPH_ID
+                JOIN $TABLE_CHAPTERS c ON p.$COL_CHAPTER_ID = c.$COL_CHAPTER_ID
+                WHERE c.$COL_BOOK_ID = ?
+            )
+            SELECT
+                $COL_DICTIONARY_FORM,
+                $COL_TOKEN_POSITION,
+                $COL_PARAGRAPH_POSITION,
+                $COL_CHAPTER_POSITION
+            FROM
+                RankedTokens
+            WHERE
+                rn = 1
+            ORDER BY
+                $COL_CHAPTER_POSITION,
+                $COL_PARAGRAPH_POSITION,
+                $COL_TOKEN_POSITION;
+        """
+        return writableDatabase.rawQuery(query, arrayOf(bookId.toString())).use {
+            buildList {
+                while (it.moveToNext()) {
+                    add(it.getString(it.getColumnIndexOrThrow(COL_DICTIONARY_FORM)))
+                }
+            }
+        }
+    }
+
+    fun getExampleSentences(entrySeq: Int): List<List<Token>> {
         val tokens = getExampleToken(entrySeq)
-        val exampleSentences = mutableListOf<String>()
-        var sentence = ""
+        val exampleSentences = mutableListOf<List<Token>>()
+        var sentence = mutableListOf<Token>()
         var currentParagraphId = tokens[0].paragraphId
         for (token in tokens) {
             if (token.paragraphId == currentParagraphId) {
-                sentence += token.surface
+                sentence += Token(surface = token.surface, features =  token.features)
             } else {
-                exampleSentences.add(sentence)
-                sentence = token.surface
+                exampleSentences.add(sentence.toList())
+                sentence = mutableListOf(Token(surface = token.surface, features = token.features))
                 currentParagraphId = token.paragraphId
             }
         }
-        if (sentence != "") {
+        if (sentence.isNotEmpty()) {
             exampleSentences.add(sentence)
         }
 
@@ -309,11 +351,11 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                 t.$COL_TOKEN_SURFACE,
                 p.$COL_PARAGRAPH_POSITION,
                 c.$COL_CHAPTER_POSITION,
-                b.$COL_BOOKS_ID
+                b.$COL_BOOK_ID
             FROM $TABLE_TOKENS t 
             JOIN $TABLE_PARAGRAPHS p ON t.$COL_PARAGRAPH_ID = p.$COL_PARAGRAPH_ID
             JOIN $TABLE_CHAPTERS c ON p.$COL_CHAPTER_ID = c.$COL_CHAPTER_ID
-            JOIN $TABLE_BOOKS b ON c.$COL_BOOKS_ID = b.$COL_BOOKS_ID
+            JOIN $TABLE_BOOKS b ON c.$COL_BOOK_ID = b.$COL_BOOK_ID
             WHERE t.$COL_PARAGRAPH_ID IN (
                 SELECT t2.$COL_PARAGRAPH_ID 
                 FROM $TABLE_TOKENS t2
@@ -345,11 +387,11 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                 $TABLE_PARAGRAPHS.$COL_PARAGRAPH_POSITION,
                 $TABLE_CHAPTERS.$COL_CHAPTER_POSITION,
                 $TABLE_TOKENS.$COL_PARAGRAPH_ID,
-                $TABLE_BOOKS.$COL_BOOKS_ID
+                $TABLE_BOOKS.$COL_BOOK_ID
             FROM $TABLE_TOKENS
             JOIN $TABLE_PARAGRAPHS ON $TABLE_TOKENS.$COL_PARAGRAPH_ID = $TABLE_PARAGRAPHS.$COL_PARAGRAPH_ID
             JOIN $TABLE_CHAPTERS ON $TABLE_PARAGRAPHS.$COL_CHAPTER_ID = $TABLE_CHAPTERS.$COL_CHAPTER_ID
-            JOIN $TABLE_BOOKS ON $TABLE_CHAPTERS.$COL_BOOKS_ID = $TABLE_BOOKS.$COL_BOOKS_ID
+            JOIN $TABLE_BOOKS ON $TABLE_CHAPTERS.$COL_BOOK_ID = $TABLE_BOOKS.$COL_BOOK_ID
             WHERE $TABLE_BOOKS.$COL_BOOK_TITLE = ?
             ORDER BY $TABLE_CHAPTERS.$COL_CHAPTER_POSITION, $TABLE_PARAGRAPHS.$COL_PARAGRAPH_POSITION, $TABLE_TOKENS.$COL_TOKEN_POSITION
         """
@@ -408,7 +450,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                     ),
                     surface = cursor.getString(cursor.getColumnIndexOrThrow(COL_TOKEN_SURFACE)),
                     paragraphId = cursor.getInt(cursor.getColumnIndexOrThrow(COL_PARAGRAPH_ID)),
-                    bookId = cursor.getInt(cursor.getColumnIndexOrThrow(COL_BOOKS_ID))
+                    bookId = cursor.getInt(cursor.getColumnIndexOrThrow(COL_BOOK_ID))
                 )
             }
         }

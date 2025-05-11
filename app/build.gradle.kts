@@ -54,7 +54,8 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(files("libs/tokenizer.aar"))
     implementation(libs.gson)
-
+    implementation(libs.glide)
+    annotationProcessor(libs.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

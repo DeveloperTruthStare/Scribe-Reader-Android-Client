@@ -1,24 +1,26 @@
 <resources>
-    <string name="app_name">Rikka\'s Repository</string>
+    <string name="app_name">Scribe Reader</string>
 
+    <!-- Place holders -->
     <string name="placeholder_text">Place holder</string>
-    <string name="placeholder_kanji">食べたい</string>
-    <string name="placeholder_furigana">たべたい</string>
+    <string name="placeholder_kanji">青春</string>
+    <string name="placeholder_furigana">せいしゅん</string>
+    <string name="placeholder_author">ヤマグチノボル</string>
+    <string name="placeholder_book_title">青春ブタ野郎はバニーガール先輩の夢を見ない</string>
 
-    <string name="book_cover_description">Book Cover</string>
-    <string name="image_description">Image from the book</string>
-    <string name="voice_button_descriptor">Read the Text out loud.</string>
+    <!-- Activity Initialization -->
+    <string name="initialization_loading_jmdict">Loading JMDict %1$d%%</string>
 
-    <string name="download_book">ダウンロード</string>
-    <string name="cancel_book">キャンセル</string>
-    <string name="start_reading">読む</string>
-    <string name="resetProgress">Reset Progress</string>
-    <string name="downloadingText">Downloading…</string>
+    <!-- Main Activity -->
 
-    <string name="delete_local_files">ローカルファイルを削除する</string>
-    <string name="reset_progress">Reset Progress</string>
-    <string name="addToFlashCards">Add To Flash Cards</string>
-    <string name="continueButton">次</string>
+    <!-- Menu Navigation -->
+    <string name="menu_home">ホーム</string>
+    <string name="menu_flash_cards">勉強</string>
+    <string name="menu_library">ライブラリ</string>
+    <string name="menu_add">追加</string>
+
+    <!-- Home Tab -->
+    <string name="home_read_label">読み続く</string>
 
     <!-- Dictionary -->
     <string name="dictionary_search_hint">単語を入力して</string>
@@ -30,22 +32,11 @@
     <string name="definitionEntryNotFound">No Entry Found</string>
     <string name="view_example_sentences">例文を見せる</string>
 
-    <!-- Menu Navigation -->
-    <string name="menu_home">ホーム</string>
-    <string name="menu_flash_cards">勉強</string>
-    <string name="menu_library">ライブラリ</string>
-    <string name="menu_add">追加</string>
-
-
-    <string-array name="upload_type_options">
-        <item>.epub</item>
-        <item>.json (Anime)</item>
-        <item>.json (Anime)</item>
-        <item>URL</item>
-    </string-array>
-
+    <!-- Uploading -->
     <string name="addToLibrary">ライブラリに追加</string>
-    <string name="select_file_type">ファイルフォーマット</string>
+    <string name="cancel_book">キャンセル</string>
+    <string name="uploading_parsing_book">本をパースしている</string>
+    <string name="uploading_processing_book">本を解析している %1$d%%</string>
 
     <string name="author">作家</string>
     <string name="language">言語</string>
@@ -53,20 +44,29 @@
     <string name="chapters">第数</string>
     <string name="published">発行日</string>
 
-    <string name="upload_book">Upload Book</string>
-    <string name="upload_anime">Upload Anime</string>
-    <string name="upload_music">Upload Music</string>
-    <string name="upload_website">Upload Website </string>
+    <!-- Reader Activity -->
+    <string name="continueButton">次</string>
 
-    <string name="uploading_parsing_book">Parsing Book</string>
-    <string name="uploading_processing_book">Processing Book %1$d%%</string>
+    <!-- Book Icon Popup -->
+    <string name="vertical_text_book_label">Use Vertical Text</string>
+    <string name="current_chapter_label">Current Chapter</string>
+    <string name="current_section_label">Current Section</string>
+    <string name="generate_anki_deck_button_text">Generate Anki Deck</string>
+    <string name="read_book_button_text">Read Book</string>
 
-    <string name="initialization_loading_jmdict">Loading JMDict %1$d%%</string>
+    <!-- Book Details Drop down options -->
+    <string-array name="dropdown_options">
+        <item>Default</item>
+        <item>Vertical</item>
+        <item>Horizontal</item>
+    </string-array>
 
-    <!-- Home Tab -->
-    <string name="home_read_label">読み続く</string>
-
+    <string name="dropdown_hint">Default</string>
     <!-- Image Descriptions -->
     <string name="description_bookCover">Book Cover Image</string>
+    <string name="book_cover_description">Book Cover</string>
+    <string name="image_description">Image from the book</string>
+    <string name="voice_button_descriptor">Read the Text out loud.</string>
+
 
 </resources>
