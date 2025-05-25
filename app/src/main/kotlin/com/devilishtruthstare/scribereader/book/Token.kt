@@ -21,15 +21,22 @@ data class Token (
         internal val IGNORED_MARKERS = listOf(PUNCTUATION_MARKER, FILLER_MARKER, PARTICLE_MARKER, AUX_VERB_MARKER)
         
         fun getSearchTerm(token: Token): String = getFeatureOrSurface(token, 6)
-        fun getFeatureOrSurface(token: Token, index: Int): String {
+        fun getFeatureOrSurface(token: Token, index: Int, default: String = token.surface): String {
             return if (token.features.size > index && token.features[index] != "*") {
                 token.features[index]
             } else {
-                token.surface
+                default
             }
         }
         fun getFurigana(token: Token): String {
-            return katakanaToHiragana(getFeatureOrSurface(token, 7))
+            if (!containsKanji(token)) {
+                return ""
+            }
+            return katakanaToHiragana(getFeatureOrSurface(token, 7, ""))
+        }
+        fun containsKanji(token: Token): Boolean {
+            val kanjiRegex = Regex("[\\p{IsHan}]")
+            return kanjiRegex.containsMatchIn(token.surface)
         }
 
         fun katakanaToHiragana(input: String): String {

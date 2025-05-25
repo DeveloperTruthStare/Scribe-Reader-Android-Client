@@ -8,6 +8,13 @@
     android:paddingEnd="1dp"
     android:gravity="bottom">
     <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/furigana_text"
+        android:text="@string/placeholder_furigana"
+        android:layout_gravity="center"
+        android:textSize="11sp"/>
+    <TextView
         android:id="@+id/token_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

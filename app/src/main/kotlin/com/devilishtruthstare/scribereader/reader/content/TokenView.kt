@@ -2,6 +2,7 @@ package com.devilishtruthstare.scribereader.reader.content
 
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -20,30 +21,50 @@ import com.devilishtruthstare.scribereader.dictionary.ui.DictionaryView
 class TokenView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    token: Token
+    token: Token,
+    onLongClick: ((token: Token) -> Unit)
 ) : FrameLayout(context, attrs) {
+    companion object {
+        const val STATE_NORMAL = "NORMAL"
+        const val STATE_FURIGANA = "FURIGANA"
+    }
 
+    fun setState(newState: String) {
+        when (newState) {
+            STATE_FURIGANA -> {
+                furiganaView.visibility = VISIBLE
+                underline.visibility = if (shouldShowUnderline) VISIBLE else GONE
+            }
+            else -> {
+                furiganaView.visibility = GONE
+                underline.visibility = GONE
+            }
+        }
+    }
+    private val surfaceView: TextView
+    private val furiganaView: TextView
+    private val underline: View
+
+    private var shouldShowUnderline = true
     init {
         val button = LayoutInflater.from(context).inflate(R.layout.component_token, this, true)
+        button.setOnLongClickListener { view ->
+            onLongClick(token)
+            true
+        }
 
-        val textView = button.findViewById<TextView>(R.id.token_text)
-        val underline = button.findViewById<View>(R.id.underline)
+        surfaceView = button.findViewById(R.id.token_text)
+        furiganaView = button.findViewById(R.id.furigana_text)
+        underline = button.findViewById(R.id.underline)
 
-        textView.text = token.surface
-        textView.textSize = 24f
+        surfaceView.text = token.surface
+        Log.d("Token: ${token.surface}", Token.getFurigana(token))
+        furiganaView.text = Token.getFurigana(token)
 
         if (token.features.isEmpty() ||
             token.features[0] in Token.IGNORED_MARKERS) {
-            underline.visibility = GONE
+            shouldShowUnderline = false
         } else {
-            button.setOnClickListener { view ->
-                showReadingPopup(view, token)
-            }
-
-            button.setOnLongClickListener { view ->
-                showDefinitionPopup(view, token)
-                true
-            }
             val underlineColor = when (token.features[0]) {
                 Token.NOUN_MARKER -> "#d97706"           // amber for nouns
                 Token.PRE_NOUN_ADJECTIVAL -> "#f59e0b"   // lighter amber
@@ -59,61 +80,6 @@ class TokenView @JvmOverloads constructor(
 
             underline.setBackgroundColor(underlineColor.toColorInt())
         }
-    }
-
-    private fun showDefinitionPopup(anchorView: View, token: Token) {
-        val definitionView = DictionaryView(context, startingSearch = Token.getSearchTerm(token))
-
-        // Convert dp to pixels
-        val marginWidth = (20 * context.resources.displayMetrics.density).toInt()
-
-        // Get screen dimensions
-        val displayMetrics = context.resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val screenHeight = displayMetrics.heightPixels
-
-        // Calculate popup dimensions
-        val popupWidth = screenWidth - (2 * marginWidth)  // Full width minus margins
-        val popupHeight = screenHeight * 3 / 4
-
-        // Create PopupWindow with calculated dimensions
-        val definitionWindow = PopupWindow(definitionView, popupWidth, popupHeight, true)
-
-        definitionWindow.isOutsideTouchable = true
-
-        definitionWindow.showAtLocation(anchorView, Gravity.CENTER, 0, 0)
-    }
-    private fun showReadingPopup(anchorView: View, token: Token) {
-        val view = TokenReadingView(context, token = token)
-
-        // Measure the popup width to center it properly
-        view.measure(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED)
-        val popupWidth = view.measuredWidth
-
-        // Get the location of the button (anchorView)
-        val location = IntArray(2)
-        anchorView.getLocationOnScreen(location)
-        val anchorCenterX = location[0] + anchorView.width / 2
-
-        val xOffset = anchorCenterX - popupWidth / 2
-
-        val anchorCenterY = location[1] + anchorView.width / 2
-        val yOffset = anchorCenterY + anchorView.measuredHeight / 2
-
-        val popupWindow = PopupWindow(
-            view,
-            LayoutParams.WRAP_CONTENT,
-            LayoutParams.WRAP_CONTENT,
-            true
-        )
-
-        // Set rounded corners for the popup window background
-        popupWindow.setBackgroundDrawable(
-            ContextCompat.getDrawable(anchorView.context,
-                R.drawable.rounded_popup
-            ))
-        popupWindow.isOutsideTouchable = true
-
-        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, xOffset, yOffset)
+        setState(STATE_NORMAL)
     }
 }

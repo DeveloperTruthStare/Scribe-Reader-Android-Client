@@ -49,9 +49,7 @@ class BookDetailsView @JvmOverloads constructor(
         currentSectionEditText.setText("${book.currentSection}")
         generateAnkiDeckButton.setOnClickListener {
             val uniqueTokens = JMDict.getInstance(context).getUniqueTokenList(book.bookId)
-            for(token in uniqueTokens) {
-                Log.d("Unique Tokens: ${book.title}", token)
-            }
+            Log.d("Flash Cards", "${uniqueTokens.size}")
         }
         readBookButton.setOnClickListener {
             val intent = Intent(context, Reader::class.java).apply {

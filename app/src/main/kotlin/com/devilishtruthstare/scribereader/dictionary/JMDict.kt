@@ -282,7 +282,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         }
     }
 
-    fun getUniqueTokenList(bookId: Int): List<String> {
+    fun getUniqueTokenList(bookId: Int): List<Triple<String, Int, String>> {
         val query = """
             WITH RankedTokens AS (
                 SELECT
@@ -290,23 +290,29 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                     t.$COL_TOKEN_POSITION,
                     p.$COL_PARAGRAPH_POSITION,
                     c.$COL_CHAPTER_POSITION,
-                    ROW_NUMBER() OVER (PARTITION BY t.$COL_DICTIONARY_FORM ORDER BY c.$COL_CHAPTER_POSITION, p.$COL_PARAGRAPH_POSITION, t.$COL_TOKEN_POSITION) AS rn
+                    t.$COL_POS_PRIMARY,
+                    ROW_NUMBER() OVER (PARTITION BY t.$COL_DICTIONARY_FORM ORDER BY c.$COL_CHAPTER_POSITION, p.$COL_PARAGRAPH_POSITION, t.$COL_TOKEN_POSITION) AS rn,
+                    COUNT(*) OVER (PARTITION BY t.$COL_DICTIONARY_FORM) AS token_count
                 FROM
                     $TABLE_TOKENS t
                 JOIN $TABLE_PARAGRAPHS p ON t.$COL_PARAGRAPH_ID = p.$COL_PARAGRAPH_ID
                 JOIN $TABLE_CHAPTERS c ON p.$COL_CHAPTER_ID = c.$COL_CHAPTER_ID
-                WHERE c.$COL_BOOK_ID = ?
+                WHERE t.$COL_POS_PRIMARY NOT IN ('助詞', '記号', '感動詞', 'フィラー', '助動詞', '接続詞', 'その他') AND c.$COL_BOOK_ID = ?
             )
             SELECT
                 $COL_DICTIONARY_FORM,
                 $COL_TOKEN_POSITION,
                 $COL_PARAGRAPH_POSITION,
-                $COL_CHAPTER_POSITION
+                $COL_CHAPTER_POSITION,
+                $COL_POS_PRIMARY,
+                token_count
             FROM
                 RankedTokens
             WHERE
                 rn = 1
             ORDER BY
+                $COL_POS_PRIMARY,
+                token_count,
                 $COL_CHAPTER_POSITION,
                 $COL_PARAGRAPH_POSITION,
                 $COL_TOKEN_POSITION;
@@ -314,7 +320,10 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         return writableDatabase.rawQuery(query, arrayOf(bookId.toString())).use {
             buildList {
                 while (it.moveToNext()) {
-                    add(it.getString(it.getColumnIndexOrThrow(COL_DICTIONARY_FORM)))
+                    add(Triple<String, Int, String>(
+                        it.getString(it.getColumnIndexOrThrow(COL_DICTIONARY_FORM)),
+                        it.getInt(it.getColumnIndexOrThrow("token_count")),
+                        it.getString(it.getColumnIndexOrThrow(COL_POS_PRIMARY))))
                 }
             }
         }

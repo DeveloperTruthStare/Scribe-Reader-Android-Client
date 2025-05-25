@@ -1,12 +1,12 @@
 # Scribe Reader
 
 ## What is this?
-This is an app I'm making to help advanced langauge learners consume native Japanese books and content. 
-This takes heavy inspiration from Duolingo with it's gamified quizes throughout the reading.
+This is an app I'm making to help advanced language learners consume native Japanese books and content. 
+This takes heavy inspiration from Duolingo with it's gamified quizzes throughout the reading.
 
 ### Core Features
-- [x] In app parsing of .epub file removing unneccessary text
-- [x] In app tokenization of Japanese text
+- [x] On device parsing of .epub file
+- [x] On device tokenization of Japanese text
 - [x] On device dictionary using JMDict (custom dictionary support planned no eta)
 - [x] Searchable dictionary from anywhere in the app with sentence tokenization and custom input
 - [x] Basic TTS to read out the story

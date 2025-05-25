@@ -16,3 +16,13 @@ Go Back to previous chapters
 Cleanly return to home screen
 
 Page estimation
+
+
+Reader
+- Shows the paragraph without any flare
+- Tap on a word - toggles furigana for that word
+- Double tap on a word - toggles  furigana and underlines for whole paragraph
+- Hold on a word - sends paragraph to dictionary, focusing on the token held on
+
+Only show furigana if there is kanji in the token
+Honestly, maybe don't ever show the underlines except in the dictionary view
