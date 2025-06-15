@@ -46,7 +46,9 @@
     <string name="published">発行日</string>
 
     <!-- Reader Activity -->
-    <string name="continueButton">次</string>
+    <string name="continueButton">➔</string>
+    <string name="undoButton">⟲</string>
+    <string name="EXTRA_BOOK_ID">BOOK_ID</string>
 
     <!-- Book Icon Popup -->
     <string name="vertical_text_book_label">Use Vertical Text</string>

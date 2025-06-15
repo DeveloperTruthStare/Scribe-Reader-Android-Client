@@ -10,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatButton
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
@@ -18,31 +19,27 @@ import androidx.recyclerview.widget.RecyclerView
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Book
 import com.devilishtruthstare.scribereader.book.Content
+import com.devilishtruthstare.scribereader.book.Token
 import com.devilishtruthstare.scribereader.book.utils.BookParser
 import com.devilishtruthstare.scribereader.database.RecordKeeper
+import com.devilishtruthstare.scribereader.dictionary.JMDict
 import com.devilishtruthstare.scribereader.ui.MainActivity
 import com.devilishtruthstare.scribereader.ui.reader.content.BookContentAdapter
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.min
 
 
 class Reader : AppCompatActivity(), OnInitListener {
-    companion object {
-        const val EXTRA_BOOK_ID = "BOOK_ID"
-        private const val NEXT_TEXT = "次"
-        private const val NEXT_CHAPTER_TEXT = "次の第"
-        private const val FINISH_BOOK_TEXT = "Finish Book"
-    }
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var titleText: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var progressText: TextView
-    private lateinit var continueButton: Button
+    private lateinit var continueButton: AppCompatButton
 
     private lateinit var adapter: BookContentAdapter
     private lateinit var contentList: MutableList<Content>
-
 
     private lateinit var tts: TextToSpeech
     private var ttsReady: Boolean = false
@@ -62,7 +59,7 @@ class Reader : AppCompatActivity(), OnInitListener {
         tts = TextToSpeech(this, this)
 
         // Get information from the intent
-        val bookId = intent.getIntExtra(EXTRA_BOOK_ID, -1)
+        val bookId = intent.getIntExtra(resources.getString(R.string.EXTRA_BOOK_ID), -1)
 
         contentList = mutableListOf()
 
@@ -93,6 +90,30 @@ class Reader : AppCompatActivity(), OnInitListener {
             recordKeeper.startBook(book.bookId)
         }
         recordKeeper.addOpenHistory(bookId)
+
+        /*
+        val bookParsed = JMDict.getInstance(this).getBookFromTokens(book.title)
+        book = BookParser.finishParsing(this, bookParsed, book)
+        progressBar.max = book.chapters.size
+        updateProgressBar()
+        for(i in 0..book.currentSection) {
+            val section = book.chapters[book.currentChapter].content[i]
+            (!section.isImage).let {
+                section.onPlaySoundClick = {
+                    if (ttsReady)
+                        tts.speak(section.content, TextToSpeech.QUEUE_FLUSH, null, null)
+                }
+            }
+            if (i == book.currentSection) {
+                section.isActive = true
+            }
+            contentList.add(section)
+            adapter.notifyItemInserted(i)
+        }
+        linearLayoutManager.scrollToPosition(contentList.size-1)
+        continueButton.isEnabled = true
+
+        */
         lifecycleScope.launch {
             book = BookParser.parseBook(this@Reader, book).await()
             for ((index, chapter) in book.chapters.withIndex()) {
@@ -108,21 +129,32 @@ class Reader : AppCompatActivity(), OnInitListener {
                             tts.speak(section.content, TextToSpeech.QUEUE_FLUSH, null, null)
                     }
                 }
+                if (i == book.currentSection) {
+                    section.isActive = true
+                }
                 contentList.add(section)
                 adapter.notifyItemInserted(i)
             }
+            linearLayoutManager.scrollToPosition(contentList.size-1)
             continueButton.isEnabled = true
         }
     }
 
     private fun nextLineClick () {
+        // Plus one to all tokens in section
+        for (token in book.chapters[book.currentChapter].content[book.currentSection].tokens) {
+            val entries = JMDict.getInstance(this).getEntries(Token.getSearchTerm(token))
+            for (entry in entries) {
+                JMDict.getInstance(this).updateEntry(entry.entSeq, entry.level+1)
+            }
+        }
         book.currentSection++
+        contentList[contentList.size-1].isActive = false
         if (book.currentSection >= book.chapters[book.currentChapter].content.size) {
             book.currentChapter++
             book.currentSection = 0
             clearContent()
             progressBar.max = book.chapters[book.currentChapter].content.size
-            continueButton.text = NEXT_TEXT
 
             if (book.currentChapter >= book.chapters.size) {
                 RecordKeeper.getInstance(this).finishBook(book.bookId)
@@ -130,8 +162,11 @@ class Reader : AppCompatActivity(), OnInitListener {
             }
         }
         val nextSection = book.chapters[book.currentChapter].content[book.currentSection]
+        nextSection.isActive = true
+
         contentList.add(nextSection)
         adapter.notifyItemInserted(contentList.size-1)
+        adapter.notifyItemChanged(contentList.size-2)
 
         if (!nextSection.isImage) {
             nextSection.onPlaySoundClick = {
@@ -141,7 +176,7 @@ class Reader : AppCompatActivity(), OnInitListener {
             nextSection.onPlaySoundClick()
         }
 
-        linearLayoutManager.scrollToPosition(contentList.size)
+        linearLayoutManager.scrollToPosition(contentList.size-1)
 
         updateProgressBar()
 
@@ -150,14 +185,6 @@ class Reader : AppCompatActivity(), OnInitListener {
             book.currentChapter,
             book.currentSection
         )
-
-        if (book.currentSection == book.chapters[book.currentChapter].content.size-1) {
-            if (book.currentChapter == book.chapters.size-1) {
-                continueButton.text = FINISH_BOOK_TEXT
-            } else {
-                continueButton.text = NEXT_CHAPTER_TEXT
-            }
-        }
     }
 
     private fun updateProgressBar() {

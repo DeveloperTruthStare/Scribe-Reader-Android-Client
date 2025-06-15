@@ -5,7 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="16dp">
+    android:layout_margin="10dp"
+    android:padding="16dp"
+    android:background="@drawable/rounded_popup">
     <ImageView
         android:id="@+id/tts_button"
         android:layout_width="40dp"

@@ -6,7 +6,8 @@ data class Content (
     var isImage: Boolean,
     var content: String,
     var tokens: MutableList<Token>,
+    var isActive: Boolean,
 
     var imageResource: Resource?,
-    var onPlaySoundClick: () -> Unit
+    var onPlaySoundClick: () -> Unit,
 )

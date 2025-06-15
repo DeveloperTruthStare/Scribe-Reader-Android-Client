@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_gravity="bottom|center"
-    android:background="@color/background"
+    android:background="@color/background_contrast"
     android:id="@+id/main"
     tools:context=".ui.reader.Reader">
     <TextView
@@ -45,7 +45,7 @@
         android:layout_height="match_parent"
         android:gravity="center_horizontal"
         android:layout_below="@+id/progressText"
-        android:layout_above="@+id/continue_button"
+        android:layout_above="@+id/button_container"
         android:orientation="vertical">
 
             <androidx.recyclerview.widget.RecyclerView
@@ -53,18 +53,36 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="bottom" />
-
     </LinearLayout>
-    <Button
-        android:id="@+id/continue_button"
+    <LinearLayout
+        android:id="@+id/button_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/continueButton"
-        android:textSize="24sp"
-        android:textColor="@android:color/white"
-        android:backgroundTint="@android:color/holo_green_dark"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_margin="8dp"/>
+        android:orientation="horizontal"
+        android:layout_margin="8dp">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/new_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:text="@string/undoButton"
+            android:textSize="24sp"
+            android:textColor="@android:color/white"
+            android:background="@drawable/rounded_left_only"
+            android:layout_marginEnd="8dp" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/continue_button"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1"
+            android:text="➔"
+            android:textSize="24sp"
+            android:textColor="@android:color/white"
+            android:background="@drawable/rounded_right_only"
+            android:backgroundTint="@android:color/holo_green_dark"/>
+    </LinearLayout>
+
 </RelativeLayout>
 

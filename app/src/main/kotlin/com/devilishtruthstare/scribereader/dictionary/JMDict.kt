@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
 import androidx.core.database.sqlite.transaction
 import com.devilishtruthstare.scribereader.book.Book
 import com.devilishtruthstare.scribereader.book.Chapter
@@ -33,10 +34,12 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         private const val ENTRY_TABLE = "Entries"
         private const val COL_ID = "entSeq"
         private const val COL_JSON = "json"
+        private const val COL_LEARNED = "learned"
         private const val CREATE_ENTRY_TABLE_SQL = """
             CREATE TABLE IF NOT EXISTS $ENTRY_TABLE (
                 $COL_ID INTEGER PRIMARY KEY,
-                $COL_JSON TEXT NOT NULL
+                $COL_JSON TEXT NOT NULL,
+                $COL_LEARNED INTEGER NOT NULL DEFAULT 0
             )
         """
 
@@ -78,14 +81,14 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         private const val COL_PARAGRAPH_ID = "ParagraphId"
         private const val COL_PARAGRAPH_POSITION = "ParagraphPosition"
         private const val COL_IS_IMAGE = "Image"
-        private const val COL_IMG_URL = "ImageUrl"
+        private const val COL_PARAGRAPH_CONTENT = "Content"
         private const val CREATE_PARAGRAPH_TABLE_SQL = """
             CREATE TABLE IF NOT EXISTS $TABLE_PARAGRAPHS (
                 $COL_PARAGRAPH_ID INTEGER PRIMARY KEY,
                 $COL_CHAPTER_ID INTEGER NOT NULL,
                 $COL_PARAGRAPH_POSITION INTEGER NOT NULL,
                 $COL_IS_IMAGE INTEGER NOT NULL,
-                $COL_IMG_URL TEXT NOT NULL
+                $COL_PARAGRAPH_CONTENT TEXT NOT NULL
             )
         """
 
@@ -202,11 +205,20 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                 if (cursor.moveToFirst()) {
                     do {
                         val entryJson = cursor.getString(cursor.getColumnIndexOrThrow(COL_JSON))
-                        add(gson.fromJson(entryJson, Entry::class.java))
+                        val entry = gson.fromJson(entryJson, Entry::class.java)
+                        entry.level = cursor.getInt(cursor.getColumnIndexOrThrow(COL_LEARNED))
+                        add(entry)
                     } while (cursor.moveToNext())
                 }
             }
         }
+    }
+
+    // TODO: bulk update entries with unique levels
+    fun updateEntry(entSeq: Int, level: Int) {
+        writableDatabase.execSQL(
+            "UPDATE $ENTRY_TABLE SET $COL_LEARNED = ? WHERE $COL_ID = ?", arrayOf(level, entSeq)
+        )
     }
 
     suspend fun insertBook(
@@ -250,7 +262,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                             put(COL_PARAGRAPH_POSITION, p_i)
                             put(COL_CHAPTER_ID, chapterId)
                             put(COL_IS_IMAGE, paragraph.isImage)
-                            put(COL_IMG_URL, if (paragraph.isImage) paragraph.content else "")
+                            put(COL_PARAGRAPH_CONTENT, paragraph.content)
                         }
                         val paragraphId = db.insert(TABLE_PARAGRAPHS, null, paragraphValues)
 
@@ -385,24 +397,53 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         }
     }
 
+
+    private fun getContentForBook(title: String): List<ContentDto> {
+        val db = this.readableDatabase
+
+        val query = """
+            SELECT
+                p.$COL_PARAGRAPH_ID,
+                p.$COL_PARAGRAPH_POSITION,
+                p.$COL_PARAGRAPH_CONTENT,
+                p.$COL_IS_IMAGE,
+                c.$COL_CHAPTER_POSITION
+            FROM $TABLE_PARAGRAPHS p
+            INNER JOIN $TABLE_CHAPTERS c ON p.$COL_CHAPTER_ID = c.$COL_CHAPTER_ID
+            INNER JOIN $TABLE_BOOKS b ON c.$COL_BOOK_ID = b.$COL_BOOK_ID
+            WHERE b.$COL_BOOK_TITLE = ?
+            ORDER BY c.$COL_CHAPTER_POSITION, p.$COL_PARAGRAPH_POSITION
+        """
+
+        val cursor = db.rawQuery(query, arrayOf(title))
+        return buildList {
+            cursor.use {
+                while (it.moveToNext()) {
+                    add(ContentDto.build(it))
+                }
+            }
+        }
+    }
+
     fun getBookFromTokens(title: String): Book {
         val db = this.writableDatabase
 
         val query = """
             SELECT 
-                $TABLE_TOKENS.$COL_DICTIONARY_FORM,
-                $TABLE_TOKENS.$COL_FEATURES,
-                $TABLE_TOKENS.$COL_TOKEN_POSITION,
-                $TABLE_PARAGRAPHS.$COL_PARAGRAPH_POSITION,
-                $TABLE_CHAPTERS.$COL_CHAPTER_POSITION,
-                $TABLE_TOKENS.$COL_PARAGRAPH_ID,
-                $TABLE_BOOKS.$COL_BOOK_ID
-            FROM $TABLE_TOKENS
-            JOIN $TABLE_PARAGRAPHS ON $TABLE_TOKENS.$COL_PARAGRAPH_ID = $TABLE_PARAGRAPHS.$COL_PARAGRAPH_ID
-            JOIN $TABLE_CHAPTERS ON $TABLE_PARAGRAPHS.$COL_CHAPTER_ID = $TABLE_CHAPTERS.$COL_CHAPTER_ID
-            JOIN $TABLE_BOOKS ON $TABLE_CHAPTERS.$COL_BOOK_ID = $TABLE_BOOKS.$COL_BOOK_ID
-            WHERE $TABLE_BOOKS.$COL_BOOK_TITLE = ?
-            ORDER BY $TABLE_CHAPTERS.$COL_CHAPTER_POSITION, $TABLE_PARAGRAPHS.$COL_PARAGRAPH_POSITION, $TABLE_TOKENS.$COL_TOKEN_POSITION
+                t.$COL_DICTIONARY_FORM,
+                t.$COL_FEATURES,
+                t.$COL_TOKEN_POSITION,
+                t.$COL_TOKEN_SURFACE,
+                p.$COL_PARAGRAPH_POSITION,
+                c.$COL_CHAPTER_POSITION,
+                t.$COL_PARAGRAPH_ID,
+                b.$COL_BOOK_ID
+            FROM $TABLE_TOKENS t
+            JOIN $TABLE_PARAGRAPHS p ON t.$COL_PARAGRAPH_ID = p.$COL_PARAGRAPH_ID
+            JOIN $TABLE_CHAPTERS c ON p.$COL_CHAPTER_ID = c.$COL_CHAPTER_ID
+            JOIN $TABLE_BOOKS b ON c.$COL_BOOK_ID = b.$COL_BOOK_ID
+            WHERE b.$COL_BOOK_TITLE = ?
+            ORDER BY c.$COL_CHAPTER_POSITION, p.$COL_PARAGRAPH_POSITION, t.$COL_TOKEN_POSITION
         """
 
         val cursor = db.rawQuery(query, arrayOf(title))
@@ -416,25 +457,59 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
 
         // Get All Tokens from book
         var book = Book()
+
+        val content = getContentForBook(title)
         var currentChapter = -1
-        var currentParagraph = -1
+
+        for (paragraph in content) {
+            if (currentChapter != paragraph.chapterPosition) {
+                currentChapter++
+                book.chapters.add(Chapter())
+            }
+            book.chapters[currentChapter].content.add(Content(
+                isImage = paragraph.isImage,
+                tokens = mutableListOf(),
+                content = paragraph.content,
+                isActive = false,
+                imageResource = null,
+                onPlaySoundClick = {}
+            ))
+        }
 
         for (token in tokens) {
-            if (currentChapter != token.chapterPosition) {
-                book.chapters.add(Chapter())
-                currentParagraph = 0
-                currentChapter = token.chapterPosition
+            if (book.chapters.size <= token.chapterPosition) {
+                Log.e("PARSER", "not enough chapters")
+            } else if (book.chapters[token.chapterPosition].content.size <= token.paragraphPosition) {
+                Log.e("PARSER", "not enough paragraphs")
+            } else {
+                book.chapters[token.chapterPosition].content[token.paragraphPosition].tokens.add(Token(
+                    surface = token.surface,
+                    features = token.features
+                ))
             }
-            if (currentParagraph != token.paragraphPosition) {
-                book.chapters[currentChapter].content.add(Content(isImage = false, content = "", tokens = mutableListOf(), imageResource = null, onPlaySoundClick = {}))
-                currentParagraph = token.paragraphPosition
-            }
-            //book.chapters[currentChapter].content[currentParagraph].tokens.add(Token(surface = token.surface, features = token.features))
         }
 
         return book
     }
-
+    data class ContentDto(
+        val isImage: Boolean,
+        val content: String,
+        val paragraphId: Int,
+        val paragraphPosition: Int,
+        val chapterPosition: Int
+    ) {
+        companion object {
+            fun build(cursor: Cursor): ContentDto {
+                return ContentDto(
+                    isImage = cursor.getInt(cursor.getColumnIndexOrThrow(COL_IS_IMAGE)) != 0,
+                    content = cursor.getString(cursor.getColumnIndexOrThrow(COL_PARAGRAPH_CONTENT)),
+                    paragraphPosition = cursor.getInt(cursor.getColumnIndexOrThrow(COL_PARAGRAPH_POSITION)),
+                    paragraphId = cursor.getInt(cursor.getColumnIndexOrThrow(COL_PARAGRAPH_ID)),
+                    chapterPosition = cursor.getInt(cursor.getColumnIndexOrThrow(COL_CHAPTER_POSITION))
+                )
+            }
+        }
+    }
     data class TokenDto (
         val tokenPosition: Int,
         val paragraphId: Int,

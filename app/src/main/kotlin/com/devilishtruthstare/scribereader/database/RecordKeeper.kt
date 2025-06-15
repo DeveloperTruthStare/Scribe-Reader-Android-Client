@@ -51,7 +51,6 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
                 $COL_LANGUAGE TEXT NOT NULL,
                 $COL_STATUS TEXT NOT NULL,
                 $COL_PREFER_VERTICAL_TEXT TEXT DEFAULT "${Book.VERTICAL_TEXT_DEFAULT}",
-                $COL_LEARNING_MODE TEXT NOT NULL,
                 $COL_LAST_OPENED DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """

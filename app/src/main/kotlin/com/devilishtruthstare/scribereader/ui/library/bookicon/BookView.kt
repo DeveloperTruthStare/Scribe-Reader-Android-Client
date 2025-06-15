@@ -61,7 +61,7 @@ class BookView @JvmOverloads constructor(
 
         setOnClickListener {
             val intent = Intent(context, Reader::class.java).apply {
-                putExtra(Reader.EXTRA_BOOK_ID, book.bookId)
+                putExtra(resources.getString(R.string.EXTRA_BOOK_ID), book.bookId)
             }
             context.startActivity(intent)
         }

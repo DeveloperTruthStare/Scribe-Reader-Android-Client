@@ -33,7 +33,7 @@ class DictionaryView @JvmOverloads constructor(
     private val searchBar: EditText
     private val tokenContainer: FlexboxLayout
     private val t = Tokenizer.newTokenizer()
-    private val jmDict = JMDict.Companion.getInstance(context)
+    private val jmDict = JMDict.getInstance(context)
     private var searchResults = mutableListOf<Pair<Token, List<Entry>>>()
 
     init {
@@ -119,6 +119,7 @@ class DictionaryView @JvmOverloads constructor(
         private val kanjiText: TextView
         private val kanaText: TextView
         private val senseContainer: LinearLayout
+        private val levelText: TextView
         init {
             LayoutInflater.from(context).inflate(R.layout.view_entry, this, true)
             exampleSentenceButton = findViewById(R.id.viewExampleSentences)
@@ -148,18 +149,21 @@ class DictionaryView @JvmOverloads constructor(
             }
 
             kanjiText = findViewById(R.id.kanjiPrimary)
-            kanaText = findViewById(R.id.kanaPrimary)
             kanjiText.text = if (entry!!.kanji.isNotEmpty()) {
                 entry.kanji.toString()
             } else {
                 searchTerm
             }
 
+            kanaText = findViewById(R.id.kanaPrimary)
             kanaText.text = if (entry.kana.isNotEmpty()) {
                 entry.kana.toString()
             } else {
                 searchTerm
             }
+
+            levelText = findViewById(R.id.entry_level)
+            levelText.text = entry.level.toString()
 
             senseContainer = findViewById(R.id.senses)
             entry.senses.forEachIndexed { index, sense ->
