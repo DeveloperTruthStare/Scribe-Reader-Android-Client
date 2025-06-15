@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.mian.library
+package com.devilishtruthstare.scribereader.ui.library
 
 import android.content.Context
 import android.util.AttributeSet
@@ -9,7 +9,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Book
-import com.devilishtruthstare.scribereader.mian.library.bookicon.BookView
+import com.devilishtruthstare.scribereader.ui.library.bookicon.BookView
 
 class AuthorView @JvmOverloads constructor(
     context: Context,

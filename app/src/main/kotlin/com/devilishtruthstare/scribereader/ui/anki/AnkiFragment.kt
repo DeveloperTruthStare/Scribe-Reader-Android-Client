@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.mian.anki
+package com.devilishtruthstare.scribereader.ui.anki
 
 import android.os.Bundle
 import android.view.View

@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.reader.content
+package com.devilishtruthstare.scribereader.ui.reader.content
 
 import android.content.Context
 import android.util.AttributeSet

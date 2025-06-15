@@ -31,6 +31,7 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         private const val COL_LANGUAGE = "Language"
         private const val COL_STATUS = "Status"
         private const val COL_PREFER_VERTICAL_TEXT = "VerticalText"
+        private const val COL_LEARNING_MODE = "LearningMode"
 
         const val STATUS_NOT_STARTED = "NOT_STARTED"
         const val STATUS_IN_PROGRESS = "IN_PROGRESS"
@@ -50,6 +51,7 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
                 $COL_LANGUAGE TEXT NOT NULL,
                 $COL_STATUS TEXT NOT NULL,
                 $COL_PREFER_VERTICAL_TEXT TEXT DEFAULT "${Book.VERTICAL_TEXT_DEFAULT}",
+                $COL_LEARNING_MODE TEXT NOT NULL,
                 $COL_LAST_OPENED DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """

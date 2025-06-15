@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.mian.uploader
+package com.devilishtruthstare.scribereader.ui.uploader
 
 import android.app.AlertDialog
 import android.content.ContentResolver
@@ -18,7 +18,7 @@ import com.devilishtruthstare.scribereader.book.utils.BookParser
 import com.devilishtruthstare.scribereader.database.RecordKeeper
 import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils
 import com.devilishtruthstare.scribereader.dictionary.JMDict
-import com.devilishtruthstare.scribereader.mian.library.LibraryFragment
+import com.devilishtruthstare.scribereader.ui.library.LibraryFragment
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

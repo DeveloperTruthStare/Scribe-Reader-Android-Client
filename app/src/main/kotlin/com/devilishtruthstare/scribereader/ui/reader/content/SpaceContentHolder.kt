@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.reader.content
+package com.devilishtruthstare.scribereader.ui.reader.content
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView

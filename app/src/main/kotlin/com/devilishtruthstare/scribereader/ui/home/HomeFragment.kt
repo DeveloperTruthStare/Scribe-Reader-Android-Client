@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.mian.home
+package com.devilishtruthstare.scribereader.ui.home
 
 import android.os.Bundle
 import android.view.View
@@ -6,7 +6,7 @@ import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.database.RecordKeeper
-import com.devilishtruthstare.scribereader.mian.library.bookicon.BookView
+import com.devilishtruthstare.scribereader.ui.library.bookicon.BookView
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var recentBooksContainer: LinearLayout

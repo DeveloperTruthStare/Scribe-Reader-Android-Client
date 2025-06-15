@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.initialization
+package com.devilishtruthstare.scribereader.ui
 
 import android.content.Intent
 import android.os.Bundle
@@ -9,14 +9,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import com.devilishtruthstare.scribereader.mian.MainActivity
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.dictionary.JMDict
 import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils
 import kotlinx.coroutines.launch
 
 
-class InitializationActivity : AppCompatActivity() {
+class SetupActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var progressBar: ProgressBar
 

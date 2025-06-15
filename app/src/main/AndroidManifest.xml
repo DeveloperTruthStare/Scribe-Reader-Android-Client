@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -10,7 +10,6 @@
         tools:ignore="ScopedStorage" />
 
     <application
-        android:name=".ScribeReaderApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -22,26 +21,59 @@
         android:theme="@style/Base.Theme.ScribeReader"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".initialization.InitializationActivity"
+            android:name=".ui.anki.ImportActivity"
+            android:exported="true"
+            android:label="@string/title_activity_import"
+            android:theme="@style/Base.Theme.ScribeReader.NoActionBar">
+
+            <!-- Handle content:// URIs -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="content"
+                    android:host="*"
+                    android:pathPattern=".*\\.apkg"
+                    android:mimeType="*/*" />
+            </intent-filter>
+
+            <!-- Handle file:// URIs -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="file"
+                    android:host="*"
+                    android:pathPattern=".*\\.apkg"
+                    android:mimeType="*/*" />
+            </intent-filter>
+
+        </activity>
+
+        <activity
+            android:name=".ui.SetupActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:screenOrientation="sensorPortrait"
-            android:exported="true" >
+            android:exported="true"
+            android:screenOrientation="sensorPortrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".reader.Reader"
+            android:name=".ui.reader.Reader"
             android:exported="false"
             android:screenOrientation="sensorPortrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name=".mian.MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="false"
             android:screenOrientation="sensorPortrait"
-            android:windowSoftInputMode="adjustPan"
-            android:theme="@style/Theme.ScribeReader" />
+            android:theme="@style/Theme.ScribeReader"
+            android:windowSoftInputMode="adjustPan" />
     </application>
 
 </manifest>

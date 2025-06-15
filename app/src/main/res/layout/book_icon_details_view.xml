@@ -2,13 +2,13 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/rounded_popup"
     android:backgroundTint="@color/popupBackground"
     android:padding="10dp"
     android:elevation="4dp"
-    android:layout_margin="20dp"
+    android:layout_margin="10dp"
     android:layout_gravity="center">
 
     <TextView
@@ -90,9 +90,4 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:text="@string/generate_anki_deck_button_text" />
-    <Button
-        android:id="@+id/read_book_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/read_book_button_text" />
 </LinearLayout>

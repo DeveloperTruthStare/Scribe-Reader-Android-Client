@@ -1,0 +1,38 @@
+{
+  "data": [
+    {
+      "protons": 1,
+      "symbol": "H",
+      "amu": 1.008
+    },
+    {
+      "protons": 2,
+      "symbol": "He",
+      "amu": 4.0026
+    }
+  ],
+  "languages": [
+    {
+      "lang_name": "eng",
+      "data": [
+        {
+          "name": "Hydrogen",
+          "pronunciation": "Hydrogen"
+        },
+        {
+          "name": "Helium",
+          "pronunciation": "Helium"
+        }
+      ]
+    },
+    {
+      "lang_name": "jpn",
+      "data": [
+        {
+          "name": "水素",
+          "pronunciation": "すいそ"
+        }
+      ]
+    }
+  ]
+}

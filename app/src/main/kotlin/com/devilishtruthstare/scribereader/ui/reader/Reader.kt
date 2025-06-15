@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.reader
+package com.devilishtruthstare.scribereader.ui.reader
 
 import android.content.Intent
 import android.os.Bundle
@@ -20,8 +20,8 @@ import com.devilishtruthstare.scribereader.book.Book
 import com.devilishtruthstare.scribereader.book.Content
 import com.devilishtruthstare.scribereader.book.utils.BookParser
 import com.devilishtruthstare.scribereader.database.RecordKeeper
-import com.devilishtruthstare.scribereader.mian.MainActivity
-import com.devilishtruthstare.scribereader.reader.content.BookContentAdapter
+import com.devilishtruthstare.scribereader.ui.MainActivity
+import com.devilishtruthstare.scribereader.ui.reader.content.BookContentAdapter
 import kotlinx.coroutines.launch
 import java.util.Locale
 

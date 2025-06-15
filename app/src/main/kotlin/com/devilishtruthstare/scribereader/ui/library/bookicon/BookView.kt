@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.mian.library.bookicon
+package com.devilishtruthstare.scribereader.ui.library.bookicon
 
 import android.content.Context
 import android.content.Intent
@@ -8,6 +8,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -16,9 +17,11 @@ import android.widget.PopupWindow
 import androidx.core.content.res.ResourcesCompat
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Book
+import com.devilishtruthstare.scribereader.book.Token
 import com.devilishtruthstare.scribereader.database.RecordKeeper
 import com.devilishtruthstare.scribereader.dictionary.JMDict
-import com.devilishtruthstare.scribereader.reader.Reader
+import com.devilishtruthstare.scribereader.dictionary.ui.DictionaryView
+import com.devilishtruthstare.scribereader.ui.reader.Reader
 import nl.siegmann.epublib.domain.Resource
 import nl.siegmann.epublib.epub.EpubReader
 import java.io.File
@@ -48,9 +51,9 @@ class BookView @JvmOverloads constructor(
 
         loadBookCover(book)
         val statusResource = when (book.status) {
-            RecordKeeper.Companion.STATUS_NOT_STARTED -> R.drawable.play_arrow
-            RecordKeeper.Companion.STATUS_IN_PROGRESS -> R.drawable.incomplete_circle
-            RecordKeeper.Companion.STATUS_FINISHED -> R.drawable.check_circle
+            RecordKeeper.STATUS_NOT_STARTED -> R.drawable.play_arrow
+            RecordKeeper.STATUS_IN_PROGRESS -> R.drawable.incomplete_circle
+            RecordKeeper.STATUS_FINISHED -> R.drawable.check_circle
             else -> R.drawable.play_arrow
         }
 
@@ -58,17 +61,29 @@ class BookView @JvmOverloads constructor(
 
         setOnClickListener {
             val intent = Intent(context, Reader::class.java).apply {
-                putExtra(Reader.Companion.EXTRA_BOOK_ID, book.bookId)
+                putExtra(Reader.EXTRA_BOOK_ID, book.bookId)
             }
             context.startActivity(intent)
         }
 
         setOnLongClickListener { view ->
+            // Convert dp to pixels
+            val marginWidth = (20 * context.resources.displayMetrics.density).toInt()
+
+            // Get screen dimensions
+            val displayMetrics = context.resources.displayMetrics
+            val screenWidth = displayMetrics.widthPixels
+            val screenHeight = displayMetrics.heightPixels
+
+            // Calculate popup dimensions
+            val popupWidth = screenWidth - (2 * marginWidth)  // Full width minus margins
+            val popupHeight = screenHeight * 3 / 4
+
             val popupView = BookDetailsView(context, book = book)
             val popupWindow = PopupWindow(
                 popupView,
-                LayoutParams.WRAP_CONTENT,
-                LayoutParams.WRAP_CONTENT,
+                popupWidth,
+                popupHeight,
                 true
             )
 

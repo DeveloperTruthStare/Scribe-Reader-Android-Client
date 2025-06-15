@@ -1,7 +1,5 @@
 package com.devilishtruthstare.scribereader.book
 
-import com.devilishtruthstare.scribereader.database.RecordKeeper
-
 class Book {
     companion object {
         const val VERTICAL_TEXT_DEFAULT = "DEFAULT"

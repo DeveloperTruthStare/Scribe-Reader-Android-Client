@@ -13,6 +13,7 @@
         android:id="@+id/furigana_text"
         android:text="@string/placeholder_furigana"
         android:layout_gravity="center"
+        android:layout_marginBottom="-7sp"
         android:textSize="11sp"/>
     <TextView
         android:id="@+id/token_text"
@@ -21,7 +22,8 @@
         android:textSize="20sp"
         android:paddingTop="0dp"
         android:paddingBottom="0dp"
-        android:text="@string/placeholder_text"/>
+        android:layout_gravity="center|bottom"
+        android:text="@string/placeholder_kanji"/>
     <View
         android:id="@+id/underline"
         android:paddingTop="0dp"

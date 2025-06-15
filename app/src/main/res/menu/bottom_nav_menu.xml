@@ -12,8 +12,4 @@
         android:id="@+id/nav_library"
         android:icon="@drawable/library"
         android:title="@string/menu_library" />
-    <item
-        android:id="@+id/nav_add"
-        android:icon="@android:drawable/ic_input_add"
-        android:title="@string/menu_add" />
 </menu>
