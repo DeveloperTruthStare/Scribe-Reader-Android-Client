@@ -6,7 +6,7 @@
     <string name="placeholder_kanji">青春</string>
     <string name="placeholder_furigana">せいしゅん</string>
     <string name="placeholder_author">ヤマグチノボル</string>
-    <string name="placeholder_book_title">青春ブタ野郎はバニーガール先輩の夢を見ない</string>
+    <string name="placeholder_book_title">青春ブタ野郎はバニーガール先輩の夢を見ない [青春ブタ野郎はバニーガール先輩の夢を見ない] ()</string>
 
     <!-- Activity Initialization -->
     <string name="initialization_loading_jmdict">Loading JMDict %1$d%%</string>
@@ -49,6 +49,9 @@
     <string name="continueButton">➔</string>
     <string name="undoButton">⟲</string>
     <string name="EXTRA_BOOK_ID">BOOK_ID</string>
+
+    <!-- Learning Module -->
+    <string name="learning_module_title">知っている言葉をタップして下さい</string>
 
     <!-- Book Icon Popup -->
     <string name="vertical_text_book_label">Use Vertical Text</string>

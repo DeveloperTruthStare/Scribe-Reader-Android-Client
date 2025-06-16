@@ -1,15 +1,10 @@
-package com.devilishtruthstare.scribereader.ui.reader.content
+package com.devilishtruthstare.scribereader.ui.reader.bookcontent
 
-import android.view.Gravity
 import android.view.View
 import android.widget.ImageView
-import android.widget.PopupWindow
-import androidx.core.view.children
 import androidx.recyclerview.widget.RecyclerView
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Content
-import com.devilishtruthstare.scribereader.book.Token
-import com.devilishtruthstare.scribereader.dictionary.ui.DictionaryView
 import com.google.android.flexbox.FlexboxLayout
 
 class TextContentHolder(
@@ -30,6 +25,7 @@ class TextContentHolder(
             textViews.add(textView)
             textContainer.addView(textView)
         }
+        ttsButton.visibility = if (section.isActive) View.VISIBLE else View.GONE
         ttsButton.setOnClickListener {
             section.onPlaySoundClick()
         }

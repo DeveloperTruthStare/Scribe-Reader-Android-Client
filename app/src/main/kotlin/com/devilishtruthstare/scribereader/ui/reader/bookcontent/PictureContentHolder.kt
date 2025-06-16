@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.ui.reader.content
+package com.devilishtruthstare.scribereader.ui.reader.bookcontent
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory

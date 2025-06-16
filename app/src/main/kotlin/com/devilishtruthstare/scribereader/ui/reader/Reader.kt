@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeech.OnInitListener
 import android.util.Log
-import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -18,7 +17,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Book
-import com.devilishtruthstare.scribereader.book.Content
 import com.devilishtruthstare.scribereader.book.Token
 import com.devilishtruthstare.scribereader.book.utils.BookParser
 import com.devilishtruthstare.scribereader.database.RecordKeeper
@@ -27,10 +25,15 @@ import com.devilishtruthstare.scribereader.ui.MainActivity
 import com.devilishtruthstare.scribereader.ui.reader.content.BookContentAdapter
 import kotlinx.coroutines.launch
 import java.util.Locale
-import kotlin.math.min
 
 
 class Reader : AppCompatActivity(), OnInitListener {
+    companion object {
+        internal enum class State {
+            LOADING_BOOK, PREP_NEXT_PARAGRAPH, FINISH_PARAGRAPH, LEARNING_MODULE, NEXT_PARAGRAPH, DISPLAYING_PARAGRAPH
+        }
+    }
+    private var state: State = State.LOADING_BOOK
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var titleText: TextView
@@ -39,7 +42,6 @@ class Reader : AppCompatActivity(), OnInitListener {
     private lateinit var continueButton: AppCompatButton
 
     private lateinit var adapter: BookContentAdapter
-    private lateinit var contentList: MutableList<Content>
 
     private lateinit var tts: TextToSpeech
     private var ttsReady: Boolean = false
@@ -60,17 +62,17 @@ class Reader : AppCompatActivity(), OnInitListener {
 
         // Get information from the intent
         val bookId = intent.getIntExtra(resources.getString(R.string.EXTRA_BOOK_ID), -1)
+        val recordKeeper = RecordKeeper.getInstance(this)
+        book = recordKeeper.getBookById(bookId)!!
 
-        contentList = mutableListOf()
 
         // Get references to UI Elements
         linearLayoutManager = LinearLayoutManager(this)
-        linearLayoutManager.scrollToPosition(contentList.size)
 
         recyclerView = findViewById(R.id.recycler_view)
         recyclerView.layoutManager = linearLayoutManager
 
-        adapter = BookContentAdapter(contentList, this)
+        adapter = BookContentAdapter(book, this)
         recyclerView.adapter = adapter
 
         titleText = findViewById(R.id.reader_title)
@@ -80,93 +82,111 @@ class Reader : AppCompatActivity(), OnInitListener {
         continueButton = findViewById(R.id.continue_button)
         continueButton.isEnabled = false
         continueButton.setOnClickListener {
-            nextLineClick()
+            nextState()
         }
 
-        val recordKeeper = RecordKeeper.getInstance(this)
-        book = recordKeeper.getBookById(bookId)!!
         titleText.text = book.title
-        if (book.status == RecordKeeper.STATUS_NOT_STARTED) {
-            recordKeeper.startBook(book.bookId)
-        }
-        recordKeeper.addOpenHistory(bookId)
 
-        /*
-        val bookParsed = JMDict.getInstance(this).getBookFromTokens(book.title)
-        book = BookParser.finishParsing(this, bookParsed, book)
-        progressBar.max = book.chapters.size
-        updateProgressBar()
-        for(i in 0..book.currentSection) {
-            val section = book.chapters[book.currentChapter].content[i]
-            (!section.isImage).let {
-                section.onPlaySoundClick = {
-                    if (ttsReady)
-                        tts.speak(section.content, TextToSpeech.QUEUE_FLUSH, null, null)
-                }
-            }
-            if (i == book.currentSection) {
-                section.isActive = true
-            }
-            contentList.add(section)
-            adapter.notifyItemInserted(i)
-        }
-        linearLayoutManager.scrollToPosition(contentList.size-1)
-        continueButton.isEnabled = true
-
-        */
+        setupStates()
         lifecycleScope.launch {
             book = BookParser.parseBook(this@Reader, book).await()
-            for ((index, chapter) in book.chapters.withIndex()) {
-                Log.d("ReaderActivity", "Chapter: ${index+1} Paragraphs: ${chapter.content.size}")
-            }
-            progressBar.max = book.chapters.size
-            updateProgressBar()
-            for(i in 0..book.currentSection) {
-                val section = book.chapters[book.currentChapter].content[i]
-                (!section.isImage).let {
-                    section.onPlaySoundClick = {
-                        if (ttsReady)
-                            tts.speak(section.content, TextToSpeech.QUEUE_FLUSH, null, null)
-                    }
+            setupReader()
+        }
+    }
+    private fun playSound(text: String) {
+        if (ttsReady)
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+    }
+    private fun setupReader() {
+        book.openBook(this)
+        updateProgressBar()
+        for(i in 0..book.currentSection) {
+            val section = book.getParagraph(i)
+            if (!section.isImage) {
+                section.onPlaySoundClick = {
+                    playSound(section.content)
                 }
-                if (i == book.currentSection) {
-                    section.isActive = true
-                }
-                contentList.add(section)
-                adapter.notifyItemInserted(i)
             }
-            linearLayoutManager.scrollToPosition(contentList.size-1)
-            continueButton.isEnabled = true
+            adapter.notifyItemInserted(i)
+        }
+        linearLayoutManager.scrollToPosition(book.currentSection+1)
+        continueButton.isEnabled = true
+        nextState()
+    }
+
+
+    private var stateMap: MutableMap<State, (() -> Pair<State, Boolean>)> = mutableMapOf()
+    private fun setupStates() {
+        stateMap[State.LOADING_BOOK] = {
+            Pair(State.DISPLAYING_PARAGRAPH, false)
+        }
+        stateMap[State.PREP_NEXT_PARAGRAPH] = {
+            val hasNewWords = book.prepareNextSection(this)
+            if (hasNewWords) {
+                adapter.showingLearningModule = true
+                adapter.notifyItemChanged(book.currentSection)
+                linearLayoutManager.scrollToPosition(book.currentSection+2)
+                Pair(State.LEARNING_MODULE, false)
+            } else {
+                Pair(State.NEXT_PARAGRAPH, true)
+            }
+        }
+        stateMap[State.LEARNING_MODULE] = {
+            // Commit the Learning data
+            adapter.showingLearningModule = false
+            Pair(State.NEXT_PARAGRAPH, true)
+        }
+        stateMap[State.NEXT_PARAGRAPH] = {
+            nextParagraph()
+            Pair(State.DISPLAYING_PARAGRAPH, false)
+        }
+        stateMap[State.DISPLAYING_PARAGRAPH] = {
+            Pair(State.FINISH_PARAGRAPH, true)
+        }
+        stateMap[State.FINISH_PARAGRAPH] = {
+            finishParagraph()
+            Pair(State.PREP_NEXT_PARAGRAPH, true)
+        }
+    }
+    private fun nextState() {
+        var res = stateMap[state]!!.invoke()
+        state = res.first
+        while(res.second) {
+            res = stateMap[state]!!.invoke()
+            state = res.first
         }
     }
 
-    private fun nextLineClick () {
-        // Plus one to all tokens in section
-        for (token in book.chapters[book.currentChapter].content[book.currentSection].tokens) {
+    private fun finishParagraph() {
+        for (token in book.getCurrentSection().tokens) {
+            if (token.features.isEmpty() || token.features[0] in Token.IGNORED_MARKERS) continue
             val entries = JMDict.getInstance(this).getEntries(Token.getSearchTerm(token))
-            for (entry in entries) {
-                JMDict.getInstance(this).updateEntry(entry.entSeq, entry.level+1)
+            JMDict.getInstance(this).updateEntries(entries) { entry ->
+                entry.level+1
             }
         }
-        book.currentSection++
-        contentList[contentList.size-1].isActive = false
-        if (book.currentSection >= book.chapters[book.currentChapter].content.size) {
-            book.currentChapter++
-            book.currentSection = 0
-            clearContent()
-            progressBar.max = book.chapters[book.currentChapter].content.size
+        book.getCurrentSection().isActive = false
+        adapter.notifyItemChanged(book.currentSection+1)
+    }
 
-            if (book.currentChapter >= book.chapters.size) {
+    private fun nextParagraph () {
+        val result = book.next()
+        when (result) {
+            Book.END_OF_BOOK -> {
                 RecordKeeper.getInstance(this).finishBook(book.bookId)
                 startActivity(Intent(this, MainActivity::class.java))
+                return
+            }
+            Book.NEXT_CHAPTER -> {
+                adapter.notifyItemRangeRemoved(2, book.chapters[book.currentChapter-1].content.size+2)
+                adapter.notifyItemChanged(1)
+            }
+            Book.NEXT_PARAGRAPH -> {
+                adapter.notifyItemChanged(book.currentSection)
             }
         }
-        val nextSection = book.chapters[book.currentChapter].content[book.currentSection]
-        nextSection.isActive = true
-
-        contentList.add(nextSection)
-        adapter.notifyItemInserted(contentList.size-1)
-        adapter.notifyItemChanged(contentList.size-2)
+        updateProgressBar()
+        val nextSection = book.getCurrentSection()
 
         if (!nextSection.isImage) {
             nextSection.onPlaySoundClick = {
@@ -176,9 +196,7 @@ class Reader : AppCompatActivity(), OnInitListener {
             nextSection.onPlaySoundClick()
         }
 
-        linearLayoutManager.scrollToPosition(contentList.size-1)
-
-        updateProgressBar()
+        linearLayoutManager.scrollToPosition(book.currentSection+1)
 
         RecordKeeper.getInstance(this).setProgress(
             book.bookId,
@@ -192,12 +210,8 @@ class Reader : AppCompatActivity(), OnInitListener {
         val text = "Section ${book.currentChapter+1}: ${book.currentSection+1}/${book.chapters[book.currentChapter].content.size}"
         progressText.text = text
     }
-    private fun clearContent() {
-        val previousContentSize = contentList.size
-        contentList.clear()
-        adapter.notifyItemRangeRemoved(0, previousContentSize)
-    }
 
+    // TTS Engine Management
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             // Set the language for the TTS engine

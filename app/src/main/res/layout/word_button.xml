@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp"
+    android:orientation="horizontal">
+    <TextView
+        android:id="@+id/display_text"
+        android:background="@drawable/bottom_border_rounded"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/placeholder_kanji"
+        android:textSize="24dp"
+        android:padding="10dp"/>
+</LinearLayout>

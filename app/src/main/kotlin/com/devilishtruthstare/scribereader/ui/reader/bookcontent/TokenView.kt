@@ -1,8 +1,7 @@
-package com.devilishtruthstare.scribereader.ui.reader.content
+package com.devilishtruthstare.scribereader.ui.reader.bookcontent
 
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -92,11 +91,11 @@ class TokenView @JvmOverloads constructor(
         button.setOnLongClickListener {
             if (highestLevel == 0) {
                 markAsKnown(entries)
+                true
             } else {
                 // TODO: Show options for this token
                 false
             }
-            true
         }
     }
 

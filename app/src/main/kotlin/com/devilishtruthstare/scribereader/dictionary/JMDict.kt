@@ -12,10 +12,12 @@ import com.devilishtruthstare.scribereader.book.Book
 import com.devilishtruthstare.scribereader.book.Chapter
 import com.devilishtruthstare.scribereader.book.Content
 import com.devilishtruthstare.scribereader.book.Token
+import com.devilishtruthstare.scribereader.ui.reader.bookcontent.TokenView
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.math.max
 
 class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
     companion object {
@@ -214,7 +216,26 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         }
     }
 
-    // TODO: bulk update entries with unique levels
+    fun markAsLearned(searchTerm: String) {
+        val entries = getEntries(searchTerm)
+        updateEntries(entries) { TokenView.LEARNED_LEVEL }
+    }
+
+    fun getHighestLearnedLevel(searchTerm: String): Int {
+        var highestLevel = 0
+        val entries = getEntries(searchTerm)
+        for (entry in entries) {
+            highestLevel = max(highestLevel, entry.level)
+        }
+        return highestLevel
+    }
+
+    fun updateEntries(entries: List<Entry>, getNewLevel: (it: Entry) -> Int) {
+        for(entry in entries) {
+            val newLevel = getNewLevel(entry)
+            updateEntry(entry.entSeq, newLevel)
+        }
+    }
     fun updateEntry(entSeq: Int, level: Int) {
         writableDatabase.execSQL(
             "UPDATE $ENTRY_TABLE SET $COL_LEARNED = ? WHERE $COL_ID = ?", arrayOf(level, entSeq)
