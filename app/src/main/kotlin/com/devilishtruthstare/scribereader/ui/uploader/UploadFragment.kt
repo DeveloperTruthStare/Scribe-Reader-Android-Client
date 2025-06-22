@@ -15,11 +15,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.utils.BookParser
-import com.devilishtruthstare.scribereader.database.RecordKeeper
-import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils
-import com.devilishtruthstare.scribereader.dictionary.JMDict
+import com.devilishtruthstare.scribereader.book.RecordKeeper
+import com.devilishtruthstare.scribereader.jmdict.LibraryDB
 import com.devilishtruthstare.scribereader.ui.library.LibraryFragment
-import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import nl.siegmann.epublib.domain.Author
@@ -105,7 +103,6 @@ class UploadFragment : Fragment(R.layout.fragment_uploader) {
             fileLocation = "books/${book.title}/${book.title}.epub"
         }
 
-
         copyFileToDestination(requireContext().contentResolver, bookUri, rBook.fileLocation)
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
@@ -119,7 +116,7 @@ class UploadFragment : Fragment(R.layout.fragment_uploader) {
 
             var tokensAdded = 0
             setProgress(tokensAdded, totalTokens)
-            JMDict.getInstance(requireContext()).insertBook(
+            LibraryDB.getInstance(requireContext()).insertBook(
                 rBook,
                 onTokenAdded = {
                     tokensAdded++

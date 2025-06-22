@@ -22,4 +22,41 @@
     <color name="colorBackground">#F5F5F5</color> <!-- Light Off-white background -->
     <color name="colorCard">#FFFFFF</color> <!-- Pure white card -->
     <color name="colorPrimary">#6200EE</color> <!-- Example purple for buttons -->
+
+    <color name="button_background">#000</color>
+    <color name="button_border">#f00</color>
+    <color name="button_side">#fff</color>
+
+
+    <color name="primary">#FFFFFF</color>
+    <color name="secondary">#CCCCCC</color>
+    <color name="tertiary">#999999</color>
+    <color name="error">#FF5555</color>
+
+    <!-- Containers -->
+    <color name="primary_container">#222222</color>
+    <color name="secondary_container">#1A1A1A</color>
+    <color name="tertiary_container">#111111</color>
+    <color name="error_container">#330000</color>
+
+    <!-- Fixed Variants -->
+    <color name="primary_fixed">#E0E0E0</color>
+    <color name="primary_fixed_dim">#AAAAAA</color>
+    <color name="on_primary_fixed">#000000</color>
+    <color name="on_primary_fixed_variant">#333333</color>
+
+    <color name="secondary_fixed">#CCCCCC</color>
+    <color name="secondary_fixed_dim">#999999</color>
+    <color name="on_secondary_fixed">#000000</color>
+    <color name="on_secondary_fixed_variant">#222222</color>
+
+    <color name="tertiary_fixed">#BBBBBB</color>
+    <color name="tertiary_fixed_dim">#888888</color>
+    <color name="on_tertiary_fixed">#000000</color>
+    <color name="on_tertiary_fixed_variant">#1A1A1A</color>
+
+    <!-- Surface Tones -->
+    <color name="surface_dim">#000000</color>
+    <color name="surface">#121212</color>
+    <color name="surface_bright">#1E1E1E</color>
 </resources>

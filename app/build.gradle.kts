@@ -55,6 +55,7 @@ dependencies {
     implementation(files("libs/tokenizer.aar"))
     implementation(libs.gson)
     implementation(libs.glide)
+    implementation(libs.androidx.coordinatorlayout)
     annotationProcessor(libs.compiler)
 
     testImplementation(libs.junit)

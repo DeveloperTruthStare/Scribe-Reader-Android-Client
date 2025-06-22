@@ -15,7 +15,6 @@ class ImportActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         if (intent?.action == Intent.ACTION_VIEW) {
             val uri: Uri? = intent.data
             if (uri != null) {

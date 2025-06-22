@@ -10,6 +10,7 @@
         tools:ignore="ScopedStorage" />
 
     <application
+        android:name=".ScribeReader"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -20,6 +21,22 @@
         android:supportsRtl="true"
         android:theme="@style/Base.Theme.ScribeReader"
         android:usesCleartextTraffic="true">
+
+        <activity
+            android:name=".editor.EditorActivity"
+            android:exported="true"
+            android:label="@string/editor_activity_label">
+            <intent-filter >
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file"/>
+                <data android:scheme="content" />
+                <data android:mimeType="text/json" />
+                <data android:mimeType="*/*" />
+                <data android:mimeType="application/json"/>
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".ui.anki.ImportActivity"
             android:exported="true"
@@ -49,7 +66,6 @@
                     android:pathPattern=".*\\.apkg"
                     android:mimeType="*/*" />
             </intent-filter>
-
         </activity>
 
         <activity

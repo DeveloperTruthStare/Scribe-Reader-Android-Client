@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.dictionary
+package com.devilishtruthstare.scribereader.jmdict.data
 
 data class Entry (
     var entSeq: Int,

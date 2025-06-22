@@ -2,32 +2,24 @@ package com.devilishtruthstare.scribereader.ui.library.bookicon
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.util.AttributeSet
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import androidx.core.content.res.ResourcesCompat
+import com.devilishtruthstare.scribereader.ImageLoader
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Book
-import com.devilishtruthstare.scribereader.book.Token
-import com.devilishtruthstare.scribereader.database.RecordKeeper
-import com.devilishtruthstare.scribereader.dictionary.JMDict
-import com.devilishtruthstare.scribereader.dictionary.ui.DictionaryView
+import com.devilishtruthstare.scribereader.book.RecordKeeper
 import com.devilishtruthstare.scribereader.ui.reader.Reader
-import nl.siegmann.epublib.domain.Resource
-import nl.siegmann.epublib.epub.EpubReader
-import java.io.File
-import java.io.FileInputStream
-import java.io.IOException
-import kotlin.collections.iterator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class BookView @JvmOverloads constructor(
     context: Context,
@@ -49,7 +41,7 @@ class BookView @JvmOverloads constructor(
         imageView = findViewById(R.id.itemImage)
         bookStatusImage = findViewById(R.id.book_status)
 
-        loadBookCover(book)
+        loadBookCoverAsync(book)
         val statusResource = when (book.status) {
             RecordKeeper.STATUS_NOT_STARTED -> R.drawable.play_arrow
             RecordKeeper.STATUS_IN_PROGRESS -> R.drawable.incomplete_circle
@@ -98,12 +90,19 @@ class BookView @JvmOverloads constructor(
         }
     }
 
+    private var useParentParent: Boolean = false
+    private var booksPerRow: Float = 2.0f
     fun adjustLayoutParams(useParentParent: Boolean, booksPerRow: Float) {
+        this.useParentParent = useParentParent
+        this.booksPerRow = booksPerRow
         val parentLayout = if (useParentParent) {
             (parent?.parent as? ViewGroup)
         } else {
             parent as? ViewGroup
         } ?: return
+        if (imageView.drawable == null) {
+            return
+        }
 
         val parentWidth = parentLayout.width
         if (parentWidth == 0) return
@@ -120,33 +119,14 @@ class BookView @JvmOverloads constructor(
         }
         requestLayout()
     }
-
-    private fun loadBookCover(book: Book) {
-        val bitmap = getCoverImage(book.title)
-        imageView.setImageBitmap(bitmap)
-        imageView.scaleType = ImageView.ScaleType.CENTER_CROP
-    }
-
-    private fun getCoverImage(title: String): Bitmap {
-        val file = File(context.filesDir, "books/$title/$title.epub")
-        FileInputStream(file).use { inputStream ->
-            val epubReader = EpubReader().readEpub(inputStream)
-            val coverImage = findCoverResource(epubReader)
-            return BitmapFactory.decodeStream(coverImage.inputStream)
-        }
-    }
-
-    private fun findCoverResource(book: nl.siegmann.epublib.domain.Book) : Resource {
-        if (book.coverImage != null) {
-            return book.coverImage
-        }
-
-        for((_, resource) in book.resources.resourceMap) {
-            if (File(resource.href).nameWithoutExtension == "cover") {
-                return resource
+    private fun loadBookCoverAsync(book: Book) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val bitmap = ImageLoader.getInstance(context).getCoverImage(book.title)
+            withContext(Dispatchers.Main) {
+                imageView.setImageBitmap(bitmap)
+                imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+                adjustLayoutParams(useParentParent, booksPerRow)
             }
         }
-        Log.d("CoverImage", "Could not find Cover Image")
-        throw IOException("Could not find cover image")
     }
 }

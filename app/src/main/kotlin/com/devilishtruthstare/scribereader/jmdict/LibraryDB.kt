@@ -1,10 +1,9 @@
-package com.devilishtruthstare.scribereader.dictionary
+package com.devilishtruthstare.scribereader.jmdict
 
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteOpenHelper
 import android.util.Log
 import androidx.core.database.sqlite.transaction
@@ -12,51 +11,23 @@ import com.devilishtruthstare.scribereader.book.Book
 import com.devilishtruthstare.scribereader.book.Chapter
 import com.devilishtruthstare.scribereader.book.Content
 import com.devilishtruthstare.scribereader.book.Token
-import com.devilishtruthstare.scribereader.ui.reader.bookcontent.TokenView
+import com.devilishtruthstare.scribereader.jmdict.data.Entry
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlin.math.max
 
-class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class LibraryDB(
+    private val context: Context
+) : SQLiteOpenHelper(context, Dictionary.DATABASE_NAME, null, Dictionary.DATABASE_VERSION) {
     companion object {
         @Volatile
-        private var INSTANCE: JMDict? = null
-
-        fun getInstance(context: Context): JMDict {
+        private var INSTANCE: LibraryDB? = null
+        fun getInstance(context: Context): LibraryDB {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: JMDict(context.applicationContext).also { INSTANCE = it }
+                INSTANCE ?: LibraryDB(context.applicationContext).also { INSTANCE = it }
             }
         }
-
-        private const val DATABASE_NAME = "JMDict"
-        private const val DATABASE_VERSION = 1
-
-        private const val ENTRY_TABLE = "Entries"
-        private const val COL_ID = "entSeq"
-        private const val COL_JSON = "json"
-        private const val COL_LEARNED = "learned"
-        private const val CREATE_ENTRY_TABLE_SQL = """
-            CREATE TABLE IF NOT EXISTS $ENTRY_TABLE (
-                $COL_ID INTEGER PRIMARY KEY,
-                $COL_JSON TEXT NOT NULL,
-                $COL_LEARNED INTEGER NOT NULL DEFAULT 0
-            )
-        """
-
-        private const val READINGS_TABLE = "Readings"
-        private const val COL_READING = "reading"
-        private const val CREATE_READING_TABLE_SQL = """
-            CREATE TABLE IF NOT EXISTS $READINGS_TABLE (
-                $COL_ID INTEGER NOT NULL,
-                $COL_READING TEXT NOT NULL
-            )
-        """
-
-        private const val CREATE_INDEX_READING = """
-            CREATE INDEX idx_reading ON $READINGS_TABLE($COL_READING);
-        """
 
         private const val TABLE_BOOKS = "Books"
         private const val COL_BOOK_ID = "BookId"
@@ -117,15 +88,12 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         private const val CREATE_EXAMPLE_SENTENCES_TABLE_SQL = """
             CREATE TABLE IF NOT EXISTS $TABLE_EXAMPLE_SENTENCES (
                 $COL_TOKEN_ID INTEGER NOT NULL,
-                $COL_ID INTEGER NOT NULL
+                ${Dictionary.COL_ENTRY_ID} INTEGER NOT NULL
             )
         """
     }
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL(CREATE_ENTRY_TABLE_SQL)
-        db.execSQL(CREATE_READING_TABLE_SQL)
-        db.execSQL(CREATE_INDEX_READING)
         db.execSQL(CREATE_BOOKS_TABLE_SQL)
         db.execSQL(CREATE_CHAPTER_TABLE_SQL)
         db.execSQL(CREATE_PARAGRAPH_TABLE_SQL)
@@ -133,113 +101,11 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         db.execSQL(CREATE_EXAMPLE_SENTENCES_TABLE_SQL)
     }
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $ENTRY_TABLE")
-        db.execSQL("DROP TABLE IF EXISTS $READINGS_TABLE")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_BOOKS;")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_CHAPTERS")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_PARAGRAPHS")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_TOKENS")
         onCreate(db)
-    }
-
-    fun isDatabaseInitialized(): Boolean {
-        val db = this.readableDatabase
-        return try {
-            // Try running a query that will fail if the table doesn't exist
-            val cursor = db.rawQuery("SELECT COUNT(*) FROM $ENTRY_TABLE", null)
-            cursor.use {
-                it.moveToFirst()
-                it.getInt(0) > 0
-            }
-        } catch (_: SQLiteException) {
-            // Handle the case where the table doesn't exist
-            false
-        }
-    }
-
-    suspend fun loadEntries(
-        entries: List<Entry>,
-        onEntryAdded: (() -> Unit),
-        onFinished: (() -> Unit)
-    ) {
-        withContext(Dispatchers.IO) {
-            val db = this@JMDict.writableDatabase
-
-            db.transaction {
-                val gson = Gson()
-                val insertEntryStmt =
-                    db.compileStatement("INSERT INTO $ENTRY_TABLE ($COL_ID, $COL_JSON) VALUES (?, ?)")
-                val insertReadingStmt =
-                    db.compileStatement("INSERT INTO $READINGS_TABLE ($COL_ID, $COL_READING) VALUES (?, ?)")
-
-                entries.forEachIndexed { index, entry ->
-                    val entryJson = gson.toJson(entry)
-
-                    insertEntryStmt.bindLong(1, entry.entSeq.toLong())
-                    insertEntryStmt.bindString(2, entryJson)
-                    insertEntryStmt.executeInsert()
-                    insertEntryStmt.clearBindings()
-
-                    entry.kana.forEach { kana ->
-                        insertReadingStmt.bindLong(1, entry.entSeq.toLong())
-                        insertReadingStmt.bindString(2, kana)
-                        insertReadingStmt.executeInsert()
-                        insertReadingStmt.clearBindings()
-                    }
-
-                    entry.kanji.forEach { kanji ->
-                        insertReadingStmt.bindLong(1, entry.entSeq.toLong())
-                        insertReadingStmt.bindString(2, kanji)
-                        insertReadingStmt.executeInsert()
-                        insertReadingStmt.clearBindings()
-                    }
-
-                    if (index % 100 == 0) onEntryAdded()
-                }
-                onFinished()
-            }
-        }
-    }
-
-    fun getEntries(text: String): List<Entry> {
-        val gson = Gson()
-        val querySQL = """
-            SELECT * FROM $ENTRY_TABLE WHERE $COL_ID IN (SELECT DISTINCT $COL_ID FROM $READINGS_TABLE WHERE $COL_READING = ?);
-        """
-        return readableDatabase.rawQuery(querySQL, arrayOf(text)).use { cursor ->
-            buildList {
-                if (cursor.moveToFirst()) {
-                    do {
-                        val entryJson = cursor.getString(cursor.getColumnIndexOrThrow(COL_JSON))
-                        val entry = gson.fromJson(entryJson, Entry::class.java)
-                        entry.level = cursor.getInt(cursor.getColumnIndexOrThrow(COL_LEARNED))
-                        add(entry)
-                    } while (cursor.moveToNext())
-                }
-            }
-        }
-    }
-
-    fun markAsLearned(searchTerm: String) {
-        val entries = getEntries(searchTerm)
-        updateEntries(entries) { TokenView.LEARNED_LEVEL }
-    }
-
-    fun getHighestLearnedLevel(searchTerm: String): Int {
-        var highestLevel = 0
-        val entries = getEntries(searchTerm)
-        for (entry in entries) {
-            highestLevel = max(highestLevel, entry.level)
-        }
-        return highestLevel
-    }
-
-    fun updateEntries(entries: List<Entry>, getNewLevel: (it: Entry) -> Int) {
-        for(entry in entries) {
-            val newLevel = getNewLevel(entry)
-            updateEntry(entry.entSeq, newLevel)
-        }
-    }
-    fun updateEntry(entSeq: Int, level: Int) {
-        writableDatabase.execSQL(
-            "UPDATE $ENTRY_TABLE SET $COL_LEARNED = ? WHERE $COL_ID = ?", arrayOf(level, entSeq)
-        )
     }
 
     suspend fun insertBook(
@@ -247,7 +113,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         onTokenAdded: (() -> Unit),
         onFinished: (() -> Unit)) {
         withContext(Dispatchers.IO) {
-            val db = this@JMDict.writableDatabase
+            val db = this@LibraryDB.writableDatabase
 
             val uniqueForms = mutableSetOf<String>()
             book.chapters.forEach { chapter ->
@@ -261,7 +127,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
 
             val tokenEntryMap = mutableMapOf<String, List<Entry>>()
             for (form in uniqueForms) {
-                tokenEntryMap[form] = getEntries(form)
+                tokenEntryMap[form] = Dictionary.getInstance(context).search(form)
             }
 
             db.transaction {
@@ -302,7 +168,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                             for (entry in tokenEntryMap[tokenSearchForm].orEmpty()) {
                                 val exampleValues = ContentValues().apply {
                                     put(COL_TOKEN_ID, tokenId)
-                                    put(COL_ID, entry.entSeq)
+                                    put(Dictionary.COL_ENTRY_ID, entry.entSeq)
                                 }
                                 db.insert(TABLE_EXAMPLE_SENTENCES, null, exampleValues)
                             }
@@ -404,7 +270,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                 WHERE t2.$COL_TOKEN_ID IN (
                     SELECT $COL_TOKEN_ID 
                     FROM $TABLE_EXAMPLE_SENTENCES
-                    WHERE $COL_ID = ? LIMIT 100
+                    WHERE $Dictionary.COL_ID = ? LIMIT 100
                 )
             )
             ORDER BY t.$COL_PARAGRAPH_ID, t.$COL_TOKEN_POSITION
@@ -417,7 +283,6 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
             }
         }
     }
-
 
     private fun getContentForBook(title: String): List<ContentDto> {
         val db = this.readableDatabase
@@ -477,7 +342,7 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
         }
 
         // Get All Tokens from book
-        var book = Book()
+        val book = Book()
 
         val content = getContentForBook(title)
         var currentChapter = -1
@@ -487,13 +352,13 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
                 currentChapter++
                 book.chapters.add(Chapter())
             }
-            book.chapters[currentChapter].content.add(Content(
+            book.chapters[currentChapter].content.add(
+                Content(
                 isImage = paragraph.isImage,
                 tokens = mutableListOf(),
                 content = paragraph.content,
                 isActive = false,
-                imageResource = null,
-                onPlaySoundClick = {}
+                imageResource = null
             ))
         }
 
@@ -560,4 +425,6 @@ class JMDict(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, 
             }
         }
     }
+
+
 }

@@ -2,6 +2,7 @@ package com.devilishtruthstare.scribereader.ui.reader.content
 
 import android.content.Context
 import android.content.res.Resources
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +12,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Book
+import com.devilishtruthstare.scribereader.ui.reader.Reader
 import com.devilishtruthstare.scribereader.ui.reader.bookcontent.PictureContentHolder
 import com.devilishtruthstare.scribereader.ui.reader.bookcontent.TextContentHolder
 import com.devilishtruthstare.scribereader.ui.reader.learningmodule.LearningModuleContentHolder
@@ -49,7 +51,9 @@ class BookContentAdapter(
         return when (viewType) {
             TYPE_TEXT -> {
                 val view = LayoutInflater.from(parent.context).inflate(R.layout.item_text, parent, false)
-                TextContentHolder(view)
+                TextContentHolder(view) { content ->
+                    book.playTTS(content)
+                }
             }
             TYPE_IMAGE -> {
                 val view = LayoutInflater.from(parent.context).inflate(R.layout.item_image, parent, false)
@@ -72,6 +76,7 @@ class BookContentAdapter(
                     )
                 }
                 textView.text = "Loading Book"
+                textView.gravity = Gravity.CENTER
                 SpaceContentHolder(textView)
             }
             TYPE_LEARNING_MODULE -> {

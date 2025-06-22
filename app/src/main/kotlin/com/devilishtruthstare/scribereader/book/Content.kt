@@ -9,5 +9,4 @@ data class Content (
     var isActive: Boolean,
 
     var imageResource: Resource?,
-    var onPlaySoundClick: () -> Unit,
 )

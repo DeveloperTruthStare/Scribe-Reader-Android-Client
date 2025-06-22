@@ -1,6 +1,6 @@
-package com.devilishtruthstare.scribereader.dictionary
+package com.devilishtruthstare.scribereader.jmdict
 
-import com.devilishtruthstare.scribereader.book.Token
+import com.devilishtruthstare.scribereader.jmdict.data.Entry
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.InputStream
@@ -8,6 +8,13 @@ import java.io.InputStreamReader
 
 class DictionaryUtils {
     companion object {
+        private var _instance: DictionaryUtils? = null
+        fun getInstance(): DictionaryUtils {
+            if (_instance == null) {
+                _instance = DictionaryUtils()
+            }
+            return _instance!!
+        }
         private val posDictionary: Map<String, String> = mapOf(
             "adj-f" to "Noun or verb acting prenominally",
             "adj-i" to "Adjective (keiyoushi)",
@@ -114,11 +121,6 @@ class DictionaryUtils {
             return gson.fromJson<List<Entry>>(reader, entryListType).also {
                 reader.close()
             }
-        }
-        fun jsonToTokens(jsonString: String): MutableList<Token> {
-            val gson = Gson()
-            val type = object : TypeToken<List<Token>>() {}.type
-            return gson.fromJson(jsonString, type)
         }
     }
 }

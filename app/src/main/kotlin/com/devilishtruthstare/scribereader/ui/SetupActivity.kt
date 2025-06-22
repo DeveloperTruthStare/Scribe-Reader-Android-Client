@@ -10,8 +10,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.devilishtruthstare.scribereader.R
-import com.devilishtruthstare.scribereader.dictionary.JMDict
-import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils
+import com.devilishtruthstare.scribereader.jmdict.Dictionary
+import com.devilishtruthstare.scribereader.jmdict.DictionaryUtils
 import kotlinx.coroutines.launch
 
 
@@ -38,7 +38,7 @@ class SetupActivity : AppCompatActivity() {
     }
 
     private fun loadDictionary(onComplete: () -> Unit) {
-        val dictionary = JMDict.getInstance(this)
+        val dictionary = Dictionary.getInstance(this)
 
         if (!dictionary.isDatabaseInitialized()) {
             val inputStream = resources.openRawResource(R.raw.jmdict)

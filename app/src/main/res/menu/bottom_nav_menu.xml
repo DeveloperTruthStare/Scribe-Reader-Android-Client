@@ -5,6 +5,14 @@
         android:icon="@drawable/home"
         android:title="@string/menu_home" />
     <item
+        android:id="@+id/nav_music"
+        android:icon="@drawable/music_note_24"
+        android:title="@string/menu_music" />
+    <item
+        android:id="@+id/nav_tags"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="@string/menu_tags" />
+    <item
         android:id="@+id/nav_flash_cards"
         android:icon="@drawable/learn"
         android:title="@string/menu_flash_cards" />

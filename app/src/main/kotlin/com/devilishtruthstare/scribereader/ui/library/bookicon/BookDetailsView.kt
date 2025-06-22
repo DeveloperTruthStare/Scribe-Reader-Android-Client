@@ -1,7 +1,6 @@
 package com.devilishtruthstare.scribereader.ui.library.bookicon
 
 import android.content.Context
-import android.content.Intent
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,8 +13,8 @@ import android.widget.TextView
 import android.widget.Toast
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.Book
-import com.devilishtruthstare.scribereader.dictionary.JMDict
-import com.devilishtruthstare.scribereader.ui.reader.Reader
+import com.devilishtruthstare.scribereader.jmdict.Dictionary
+import com.devilishtruthstare.scribereader.jmdict.LibraryDB
 
 class BookDetailsView @JvmOverloads constructor(
     context: Context,
@@ -46,7 +45,7 @@ class BookDetailsView @JvmOverloads constructor(
         currentChapterEditText.setText("${book.currentChapter}")
         currentSectionEditText.setText("${book.currentSection}")
         generateAnkiDeckButton.setOnClickListener {
-            val uniqueTokens = JMDict.getInstance(context).getUniqueTokenList(book.bookId)
+            val uniqueTokens = LibraryDB.getInstance(context).getUniqueTokenList(book.bookId)
             Log.d("Flash Cards", "${uniqueTokens.size}")
         }
     }

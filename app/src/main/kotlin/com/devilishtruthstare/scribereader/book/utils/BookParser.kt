@@ -5,7 +5,7 @@ import android.util.Log
 import com.devilishtruthstare.scribereader.book.Book
 import com.devilishtruthstare.scribereader.book.Chapter
 import com.devilishtruthstare.scribereader.book.Content
-import com.devilishtruthstare.scribereader.dictionary.DictionaryUtils.Companion.jsonToTokens
+import com.devilishtruthstare.scribereader.utils.TokenizerUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -33,43 +33,8 @@ class BookParser(private val context: Context) {
                 BookParser(context).parseBook(book)
             }
         }
-        fun finishParsing(context: Context, bookFromTokens: Book, bookRecord: Book): Book {
-            bookFromTokens.title = bookRecord.title
-            bookFromTokens.coverImage = bookRecord.coverImage
-            bookFromTokens.bookId = bookRecord.bookId
-            bookFromTokens.status = bookRecord.status
-            bookFromTokens.author = bookRecord.author
-            bookFromTokens.currentChapter = bookRecord.currentChapter
-            bookFromTokens.currentSection = bookRecord.currentSection
-            bookFromTokens.fileLocation = bookRecord.fileLocation
-            bookFromTokens.language = bookRecord.language
-            bookFromTokens.verticalTextPreference = bookRecord.verticalTextPreference
-            return BookParser(context).finishParsing(bookFromTokens)
-        }
     }
-    private val t: tokenizer.Tokenizer_ = tokenizer.Tokenizer.newTokenizer()
     private val imageMap: MutableMap<String, Resource> = mutableMapOf()
-    fun finishParsing(bookDto: Book): Book {
-        val inputStream: InputStream = FileInputStream(File(context.filesDir, "books/${bookDto.title}/${bookDto.title}.epub"))
-        val book = EpubReader().readEpub(inputStream)
-
-        val imageExtensions = setOf(".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")
-        for((_, resource) in book.resources.resourceMap) {
-            if (resource.mediaType.defaultExtension in imageExtensions) {
-                imageMap[getFileNameWithoutExtension(resource.href)] = resource
-            }
-        }
-
-        for((chapter_index, chapter) in bookDto.chapters.withIndex()) {
-            for ((paragraph_index, paragraph) in chapter.content.withIndex()) {
-                if (paragraph.isImage) {
-                    bookDto.chapters[chapter_index].content[paragraph_index].imageResource = imageMap[getFileNameWithoutExtension(paragraph.content)]
-                }
-            }
-        }
-
-        return bookDto
-    }
     suspend fun parseBook(bookDto: Book): Book = withContext(Dispatchers.Default){
         val inputStream: InputStream = FileInputStream(File(context.filesDir, "books/${bookDto.title}/${bookDto.title}.epub"))
         val book = EpubReader().readEpub(inputStream)
@@ -95,7 +60,7 @@ class BookParser(private val context: Context) {
         return@withContext bookDto
     }
 
-    fun parseFile(rawText: String): Chapter {
+    private fun parseFile(rawText: String): Chapter {
         val document = Jsoup.parse(rawText)
         return Chapter().apply {
             title = document.title()
@@ -163,13 +128,12 @@ class BookParser(private val context: Context) {
 
     private fun createTextSection(text: String): Content? {
         if (text.isEmpty()) return null
-        val tokensJson = t.tokenize(text)
-        val tokens = jsonToTokens(tokensJson)
-        return Content(false, text, tokens, false, null) { }
+        val tokens = TokenizerUtils.getInstance().tokenize(text)
+        return Content(false, text, tokens, false, null)
     }
 
     private fun createImageSection(src: String): Content =
-        Content(true, src, mutableListOf(), false, imageMap[getFileNameWithoutExtension(src)]!!) { }
+        Content(true, src, mutableListOf(), false, imageMap[getFileNameWithoutExtension(src)]!!)
 
     private fun getFileNameWithoutExtension(filePath: String): String = File(filePath).nameWithoutExtension
 

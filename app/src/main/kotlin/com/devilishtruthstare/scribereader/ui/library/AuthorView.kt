@@ -2,7 +2,6 @@ package com.devilishtruthstare.scribereader.ui.library
 
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Log
 import android.view.LayoutInflater
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -24,6 +23,9 @@ class AuthorView @JvmOverloads constructor(
         bookContainer = findViewById(R.id.book_container)
     }
 
+    fun hasBooks(): Boolean {
+        return bookContainer.childCount > 0
+    }
     fun setAuthor(author: String) {
         authorText.text = author
     }
@@ -31,6 +33,5 @@ class AuthorView @JvmOverloads constructor(
     fun addBook(book: Book) {
         val bookView = BookView(context, book = book, useParentParent = true, booksPerRow = 2.5f)
         bookContainer.addView(bookView)
-        Log.d("AuthorView", "${bookContainer.childCount}")
     }
 }

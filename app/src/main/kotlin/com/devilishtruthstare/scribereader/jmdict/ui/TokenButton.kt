@@ -1,4 +1,4 @@
-package com.devilishtruthstare.scribereader.dictionary.ui
+package com.devilishtruthstare.scribereader.jmdict.ui
 
 import android.content.Context
 import android.util.AttributeSet
@@ -28,22 +28,22 @@ class TokenButton @JvmOverloads constructor(
         underline = findViewById(R.id.underline)
 
         surfaceDisplay.text = token!!.surface
-        val furigana = Token.Companion.getFurigana(token)
+        val furigana = Token.getFurigana(token)
         if (furigana != token.surface) {
             furiganaDisplay.text = furigana
         } else {
             furiganaDisplay.text = ""
         }
         defaultColor = when (token.features[0]) {
-            Token.Companion.NOUN_MARKER -> "#d97706"           // amber for nouns
-            Token.Companion.PRE_NOUN_ADJECTIVAL -> "#f59e0b"   // lighter amber
-            Token.Companion.CONJUNCTION_MARKER -> "#10b981"    // teal for conjunctions
-            Token.Companion.VERB_MARKER -> "#3b82f6"           // blue for verbs
-            Token.Companion.CONJUGATION_MARKER -> "#60a5fa"    // lighter blue
-            Token.Companion.PREFIX_MARKER -> "#8b5cf6"         // violet for prefixes
-            Token.Companion.INTERJECTION_MARKER -> "#ec4899"   // pink for interjections
-            Token.Companion.I_ADJECTIVE_MARKER -> "#f43f5e"    // red for i-adjectives
-            Token.Companion.ADVERB_MARKER -> "#14b8a6"         // cyan for adverbs
+            Token.NOUN_MARKER -> "#d97706"           // amber for nouns
+            Token.PRE_NOUN_ADJECTIVAL -> "#f59e0b"   // lighter amber
+            Token.CONJUNCTION_MARKER -> "#10b981"    // teal for conjunctions
+            Token.VERB_MARKER -> "#3b82f6"           // blue for verbs
+            Token.CONJUGATION_MARKER -> "#60a5fa"    // lighter blue
+            Token.PREFIX_MARKER -> "#8b5cf6"         // violet for prefixes
+            Token.INTERJECTION_MARKER -> "#ec4899"   // pink for interjections
+            Token.I_ADJECTIVE_MARKER -> "#f43f5e"    // red for i-adjectives
+            Token.ADVERB_MARKER -> "#14b8a6"         // cyan for adverbs
             else -> "#6b7280"                  // gray fallback
         }
 

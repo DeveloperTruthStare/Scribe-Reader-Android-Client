@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_gravity="bottom|center"
-    android:background="@color/background_contrast"
+    android:background="@color/tertiary_container"
     android:id="@+id/main"
     tools:context=".ui.reader.Reader">
     <ProgressBar
@@ -64,10 +64,10 @@
         android:layout_margin="8dp">
 
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/new_button"
+            android:id="@+id/reader_settings_button"
             android:layout_width="56dp"
             android:layout_height="56dp"
-            android:text="@string/undoButton"
+            android:text="@string/reader_settings_button_text"
             android:textSize="24sp"
             android:textColor="@android:color/white"
             android:background="@drawable/rounded_left_only"
@@ -78,7 +78,7 @@
             android:layout_width="0dp"
             android:layout_height="56dp"
             android:layout_weight="1"
-            android:text="➔"
+            android:text="@string/reader_continue_button_text"
             android:textSize="24sp"
             android:textColor="@android:color/white"
             android:background="@drawable/rounded_right_only"

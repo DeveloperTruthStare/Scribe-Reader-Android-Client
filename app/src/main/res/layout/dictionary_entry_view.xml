@@ -46,14 +46,6 @@
         android:layout_height="wrap_content"
         android:id="@+id/senses"
         android:orientation="vertical" />
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/view_example_sentences"
-        android:textSize="24sp"
-        android:textColor="@color/primaryText"
-        android:id="@+id/viewExampleSentences">
-    </TextView>
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"

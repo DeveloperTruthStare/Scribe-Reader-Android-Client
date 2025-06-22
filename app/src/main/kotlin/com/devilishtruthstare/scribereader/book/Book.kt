@@ -1,8 +1,8 @@
 package com.devilishtruthstare.scribereader.book
 
 import android.content.Context
-import com.devilishtruthstare.scribereader.database.RecordKeeper
-import com.devilishtruthstare.scribereader.dictionary.JMDict
+import com.devilishtruthstare.scribereader.jmdict.Dictionary
+import com.devilishtruthstare.scribereader.ui.reader.Reader
 
 class Book {
     companion object {
@@ -27,8 +27,12 @@ class Book {
 
     var currentChapter: Int = 0
     var currentSection: Int = 0
-    var verticalTextPreference: String = VERTICAL_TEXT_DEFAULT
+    var textMode: String = "DEFAULT"
 
+    private var activeReader: Reader? = null
+    fun setActiveReader(reader: Reader) {
+        activeReader = reader
+    }
 
     var isParsed = false
 
@@ -78,7 +82,7 @@ class Book {
             if (token.features.isEmpty() ||
                 token.features[0] in Token.IGNORED_MARKERS || searchTerm in nextSectionWords) continue
 
-            val entries = JMDict.getInstance(context).getEntries(searchTerm)
+            val entries = Dictionary.getInstance(context).search(searchTerm)
             for (entry in entries) {
                 if (entry.level == 0) {
                     nextSectionWords.add(searchTerm)
@@ -99,5 +103,8 @@ class Book {
             return END_OF_BOOK
         }
         return NEXT_CHAPTER
+    }
+    fun playTTS(content: String) {
+        activeReader?.playSound(content)
     }
 }

@@ -1,11 +1,10 @@
-package com.devilishtruthstare.scribereader.database
+package com.devilishtruthstare.scribereader.book
 
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import com.devilishtruthstare.scribereader.book.Book
 
 class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
     companion object {
@@ -145,6 +144,8 @@ class RecordKeeper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         currentSection = cursor.getInt(cursor.getColumnIndexOrThrow(COL_SECTION))
         status = cursor.getString(cursor.getColumnIndexOrThrow(COL_STATUS))
         author = cursor.getString(cursor.getColumnIndexOrThrow(COL_AUTHOR))
-        verticalTextPreference = cursor.getString(cursor.getColumnIndexOrThrow(COL_PREFER_VERTICAL_TEXT))
+        textMode = cursor.getString(cursor.getColumnIndexOrThrow(
+            COL_PREFER_VERTICAL_TEXT
+        ))
     }
 }

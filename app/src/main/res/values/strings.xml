@@ -15,6 +15,8 @@
 
     <!-- Menu Navigation -->
     <string name="menu_home">ホーム</string>
+    <string name="menu_music">Music</string>
+    <string name="menu_tags">Tags</string>
     <string name="menu_flash_cards">勉強</string>
     <string name="menu_library">ライブラリ</string>
     <string name="menu_add">追加</string>
@@ -22,6 +24,12 @@
     <!-- Home Tab -->
     <string name="home_read_label">読み続く</string>
     <string name="label_quizzes">クイズ</string>
+
+    <!-- Music -->
+    <string name="music_recent_searches_label">Recent Searches</string>
+
+    <!-- Tags -->
+    <string name="create_new_tag_label">Create New Tag</string>
 
     <!-- Dictionary -->
     <string name="dictionary_search_hint">単語を入力して</string>
@@ -47,8 +55,14 @@
 
     <!-- Reader Activity -->
     <string name="continueButton">➔</string>
-    <string name="undoButton">⟲</string>
+    <string name="reader_settings_button_text">⚙</string>
+    <string name="reader_continue_button_text">➔</string>
     <string name="EXTRA_BOOK_ID">BOOK_ID</string>
+
+    <!-- Settings -->
+    <string name="settings_vertical_text_label">Vertical Text Mode</string>
+    <string name="settings_show_learning_label">Show Learning Module</string>
+    <string name="settings_play_tts_label">Play TTS Automatically</string>
 
     <!-- Learning Module -->
     <string name="learning_module_title">知っている言葉をタップして下さい</string>
@@ -73,7 +87,9 @@
     <string name="book_cover_description">Book Cover</string>
     <string name="image_description">Image from the book</string>
     <string name="voice_button_descriptor">Read the Text out loud.</string>
+    <string name="editor_activity_label">Editor</string>
     <string name="title_activity_import">ImportActivity</string>
+
     <string name="large_text">
         "Material is the metaphor.\n\n"
 
@@ -164,6 +180,4 @@
         "when a user tries to pick up one of cards.\n\n"
     </string>
     <string name="action_settings">Settings</string>
-
-
 </resources>

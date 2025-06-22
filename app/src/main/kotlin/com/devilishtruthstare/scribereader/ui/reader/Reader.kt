@@ -16,16 +16,19 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.devilishtruthstare.scribereader.R
+import com.devilishtruthstare.scribereader.ScribeReader
+import com.devilishtruthstare.scribereader.StateMachine
 import com.devilishtruthstare.scribereader.book.Book
 import com.devilishtruthstare.scribereader.book.Token
 import com.devilishtruthstare.scribereader.book.utils.BookParser
-import com.devilishtruthstare.scribereader.database.RecordKeeper
-import com.devilishtruthstare.scribereader.dictionary.JMDict
+import com.devilishtruthstare.scribereader.book.RecordKeeper
+import com.devilishtruthstare.scribereader.jmdict.Dictionary
+import com.devilishtruthstare.scribereader.settings.ui.SettingsPopup
 import com.devilishtruthstare.scribereader.ui.MainActivity
 import com.devilishtruthstare.scribereader.ui.reader.content.BookContentAdapter
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
 import java.util.Locale
-
 
 class Reader : AppCompatActivity(), OnInitListener {
     companion object {
@@ -33,12 +36,12 @@ class Reader : AppCompatActivity(), OnInitListener {
             LOADING_BOOK, PREP_NEXT_PARAGRAPH, FINISH_PARAGRAPH, LEARNING_MODULE, NEXT_PARAGRAPH, DISPLAYING_PARAGRAPH
         }
     }
-    private var state: State = State.LOADING_BOOK
     private lateinit var recyclerView: RecyclerView
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var titleText: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var progressText: TextView
+    private lateinit var settingsButton: AppCompatButton
     private lateinit var continueButton: AppCompatButton
 
     private lateinit var adapter: BookContentAdapter
@@ -46,11 +49,14 @@ class Reader : AppCompatActivity(), OnInitListener {
     private lateinit var tts: TextToSpeech
     private var ttsReady: Boolean = false
     private lateinit var book: Book
+    private lateinit var app: ScribeReader
+    private val stateMachine = StateMachine(State.LOADING_BOOK)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        app = (applicationContext as ScribeReader)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_reader)
+        setContentView(R.layout.reader_activity)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -65,7 +71,6 @@ class Reader : AppCompatActivity(), OnInitListener {
         val recordKeeper = RecordKeeper.getInstance(this)
         book = recordKeeper.getBookById(bookId)!!
 
-
         // Get references to UI Elements
         linearLayoutManager = LinearLayoutManager(this)
 
@@ -76,93 +81,110 @@ class Reader : AppCompatActivity(), OnInitListener {
         recyclerView.adapter = adapter
 
         titleText = findViewById(R.id.reader_title)
+        titleText.text = book.title
+
         progressBar = findViewById(R.id.progressBar)
         progressText = findViewById(R.id.progressText)
 
         continueButton = findViewById(R.id.continue_button)
         continueButton.isEnabled = false
         continueButton.setOnClickListener {
-            nextState()
+            stateMachine.nextState()
         }
 
-        titleText.text = book.title
+        initializeSettings()
 
-        setupStates()
+        initializeStates()
         lifecycleScope.launch {
             book = BookParser.parseBook(this@Reader, book).await()
+            book.setActiveReader(this@Reader)
             setupReader()
         }
     }
-    private fun playSound(text: String) {
-        if (ttsReady)
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+    private fun initializeStates() {
+        stateMachine.setState(State.LOADING_BOOK) {
+            Pair(State.DISPLAYING_PARAGRAPH, false)
+        }
+        stateMachine.setState(State.PREP_NEXT_PARAGRAPH) {
+            val hasNewWords = book.prepareNextSection(this)
+            if (!hasNewWords || !(app.settings.showLearning)) {
+                Pair(State.NEXT_PARAGRAPH, true)
+            } else {
+                adapter.showingLearningModule = true
+                adapter.notifyItemChanged(book.currentSection)
+                linearLayoutManager.scrollToPosition(book.currentSection+2)
+                Pair(State.LEARNING_MODULE, false)
+            }
+        }
+        stateMachine.setState(State.LEARNING_MODULE) {
+            adapter.showingLearningModule = false
+            Pair(State.NEXT_PARAGRAPH, true)
+        }
+        stateMachine.setState(State.NEXT_PARAGRAPH) {
+            nextParagraph()
+            Pair(State.DISPLAYING_PARAGRAPH, false)
+        }
+        stateMachine.setState(State.DISPLAYING_PARAGRAPH) {
+            Pair(State.FINISH_PARAGRAPH, true)
+        }
+        stateMachine.setState(State.FINISH_PARAGRAPH) {
+            finishParagraph()
+            Pair(State.PREP_NEXT_PARAGRAPH, true)
+        }
+    }
+
+    private fun initializeSettings() {
+        val settingsController = SettingsPopup(this)
+        settingsController.setOnToggleChanged(SettingsPopup.VERTICAL_MODE, ::setVerticalText, app.settings.verticalText)
+        settingsController.setOnToggleChanged(SettingsPopup.LEARNING_MODE, ::setLearningMode, app.settings.showLearning)
+        settingsController.setOnToggleChanged(SettingsPopup.TTS_MODE, ::setTTSMode, app.settings.playTTS)
+        val settingsDialog = BottomSheetDialog(this)
+        settingsDialog.setContentView(settingsController)
+        settingsButton = findViewById(R.id.reader_settings_button)
+        settingsButton.setOnClickListener {
+            settingsDialog.show()
+        }
+    }
+    private fun setVerticalText(verticalText: Boolean) {
+        app.settings.verticalText = verticalText
+        app.settings.save()
+    }
+    private fun setLearningMode(learningMode: Boolean) {
+        app.settings.showLearning = learningMode
+        app.settings.save()
+    }
+    private fun setTTSMode(playTTS: Boolean) {
+        app.settings.playTTS = playTTS
+        app.settings.save()
+    }
+
+    fun playSound(text: String) {
+        if (!app.settings.playTTS || !ttsReady) {
+            return
+        }
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
     private fun setupReader() {
         book.openBook(this)
         updateProgressBar()
         for(i in 0..book.currentSection) {
-            val section = book.getParagraph(i)
-            if (!section.isImage) {
-                section.onPlaySoundClick = {
-                    playSound(section.content)
-                }
-            }
             adapter.notifyItemInserted(i)
         }
         linearLayoutManager.scrollToPosition(book.currentSection+1)
         continueButton.isEnabled = true
-        nextState()
-    }
-
-
-    private var stateMap: MutableMap<State, (() -> Pair<State, Boolean>)> = mutableMapOf()
-    private fun setupStates() {
-        stateMap[State.LOADING_BOOK] = {
-            Pair(State.DISPLAYING_PARAGRAPH, false)
-        }
-        stateMap[State.PREP_NEXT_PARAGRAPH] = {
-            val hasNewWords = book.prepareNextSection(this)
-            if (hasNewWords) {
-                adapter.showingLearningModule = true
-                adapter.notifyItemChanged(book.currentSection)
-                linearLayoutManager.scrollToPosition(book.currentSection+2)
-                Pair(State.LEARNING_MODULE, false)
-            } else {
-                Pair(State.NEXT_PARAGRAPH, true)
-            }
-        }
-        stateMap[State.LEARNING_MODULE] = {
-            // Commit the Learning data
-            adapter.showingLearningModule = false
-            Pair(State.NEXT_PARAGRAPH, true)
-        }
-        stateMap[State.NEXT_PARAGRAPH] = {
-            nextParagraph()
-            Pair(State.DISPLAYING_PARAGRAPH, false)
-        }
-        stateMap[State.DISPLAYING_PARAGRAPH] = {
-            Pair(State.FINISH_PARAGRAPH, true)
-        }
-        stateMap[State.FINISH_PARAGRAPH] = {
-            finishParagraph()
-            Pair(State.PREP_NEXT_PARAGRAPH, true)
-        }
-    }
-    private fun nextState() {
-        var res = stateMap[state]!!.invoke()
-        state = res.first
-        while(res.second) {
-            res = stateMap[state]!!.invoke()
-            state = res.first
-        }
+        stateMachine.nextState()
     }
 
     private fun finishParagraph() {
         for (token in book.getCurrentSection().tokens) {
             if (token.features.isEmpty() || token.features[0] in Token.IGNORED_MARKERS) continue
-            val entries = JMDict.getInstance(this).getEntries(Token.getSearchTerm(token))
-            JMDict.getInstance(this).updateEntries(entries) { entry ->
-                entry.level+1
+            val entries = Dictionary.getInstance(this).search(Token.getSearchTerm(token))
+            Dictionary.getInstance(this).setEntryLevels(entries) { entry ->
+                if (entry.level == Dictionary.FIRST_VIEW_LEVEL) {
+                    Dictionary.LEARNED_LEVEL
+                } else {
+                    entry.level+1
+                }
             }
         }
         book.getCurrentSection().isActive = false
@@ -189,11 +211,7 @@ class Reader : AppCompatActivity(), OnInitListener {
         val nextSection = book.getCurrentSection()
 
         if (!nextSection.isImage) {
-            nextSection.onPlaySoundClick = {
-                if (ttsReady)
-                    tts.speak(nextSection.content, TextToSpeech.QUEUE_FLUSH, null, null)
-            }
-            nextSection.onPlaySoundClick()
+            playSound(nextSection.content)
         }
 
         linearLayoutManager.scrollToPosition(book.currentSection+1)
@@ -204,7 +222,6 @@ class Reader : AppCompatActivity(), OnInitListener {
             book.currentSection
         )
     }
-
     private fun updateProgressBar() {
         progressBar.progress = book.currentSection
         val text = "Section ${book.currentChapter+1}: ${book.currentSection+1}/${book.chapters[book.currentChapter].content.size}"
