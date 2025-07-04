@@ -76,7 +76,7 @@ class TextContentHolder(
         val context = anchorView.context
         val definitionView = DictionaryView(context, params = DictionaryView.Companion.DictionaryViewParams(
             Token.getSearchTerm(token),
-            false, false))
+            isFullscreen = false))
 
         // Convert dp to pixels
         val displayMetrics = context.resources.displayMetrics
@@ -88,7 +88,7 @@ class TextContentHolder(
 
         // Calculate popup dimensions
         val popupWidth = screenWidth - (2 * marginWidth)  // Full width minus margins
-        val popupHeight = screenHeight / 3
+        val popupHeight = screenHeight * 2 / 3
 
         // Create PopupWindow with calculated dimensions
         val definitionWindow = PopupWindow(definitionView, popupWidth, popupHeight, true)

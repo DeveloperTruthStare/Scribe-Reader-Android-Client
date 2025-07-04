@@ -40,6 +40,7 @@
     <string name="gloss_text">%1$d. %2$s</string>
     <string name="definitionEntryNotFound">No Entry Found</string>
     <string name="view_example_sentences">例文を見せる</string>
+    <string name="expand_button_text">⤢</string>
 
     <!-- Uploading -->
     <string name="addToLibrary">ライブラリに追加</string>

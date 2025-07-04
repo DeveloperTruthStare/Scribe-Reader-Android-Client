@@ -132,12 +132,23 @@ class Reader : AppCompatActivity(), OnInitListener {
             Pair(State.PREP_NEXT_PARAGRAPH, true)
         }
     }
-
     private fun initializeSettings() {
-        val settingsController = SettingsPopup(this)
-        settingsController.setOnToggleChanged(SettingsPopup.VERTICAL_MODE, ::setVerticalText, app.settings.verticalText)
-        settingsController.setOnToggleChanged(SettingsPopup.LEARNING_MODE, ::setLearningMode, app.settings.showLearning)
-        settingsController.setOnToggleChanged(SettingsPopup.TTS_MODE, ::setTTSMode, app.settings.playTTS)
+        val settingsController = SettingsPopup(this).apply {
+            addSetting("Vertical Text Mode", app.settings.verticalText) { isEnabled ->
+                app.settings.verticalText = isEnabled
+                app.settings.save()
+            }
+            addSetting("Show Learning Module", app.settings.showLearning) { isEnabled ->
+                app.settings.showLearning = isEnabled
+                app.settings.save()
+            }
+            addSetting("Play TTS", app.settings.playTTS) { isEnabled ->
+                app.settings.playTTS = isEnabled
+                app.settings.save()
+            }
+        }
+
+
         val settingsDialog = BottomSheetDialog(this)
         settingsDialog.setContentView(settingsController)
         settingsButton = findViewById(R.id.reader_settings_button)
@@ -145,19 +156,6 @@ class Reader : AppCompatActivity(), OnInitListener {
             settingsDialog.show()
         }
     }
-    private fun setVerticalText(verticalText: Boolean) {
-        app.settings.verticalText = verticalText
-        app.settings.save()
-    }
-    private fun setLearningMode(learningMode: Boolean) {
-        app.settings.showLearning = learningMode
-        app.settings.save()
-    }
-    private fun setTTSMode(playTTS: Boolean) {
-        app.settings.playTTS = playTTS
-        app.settings.save()
-    }
-
     fun playSound(text: String) {
         if (!app.settings.playTTS || !ttsReady) {
             return

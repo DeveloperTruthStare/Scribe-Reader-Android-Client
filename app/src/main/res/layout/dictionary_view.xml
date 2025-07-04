@@ -10,17 +10,17 @@
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
         <LinearLayout
+            android:id="@+id/header"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical"
-            android:paddingTop="16dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:background="@color/tertiary_container"
             app:layout_scrollFlags="scroll">
             <TextView
                 android:id="@+id/searchLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:text="Dictionary Search"
                 android:textSize="24sp"
                 android:textStyle="bold" />
@@ -33,6 +33,7 @@
             android:layout_marginEnd="15dp"
             android:layout_marginTop="10dp"
             android:orientation="horizontal"
+            android:layout_gravity="end|center"
             app:layout_scrollFlags="enterAlways">
             <EditText
                 android:id="@+id/searchText"
@@ -45,10 +46,18 @@
                 android:inputType="text"
                 android:singleLine="true" />
             <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/reader_settings_button"
+                android:id="@+id/settings_button"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
                 android:text="@string/reader_settings_button_text"
+                android:textSize="24sp"
+                android:textColor="@android:color/white"
+                android:background="@android:color/transparent"/>
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/expand_button"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:text="@string/expand_button_text"
                 android:textSize="24sp"
                 android:textColor="@android:color/white"
                 android:background="@android:color/transparent"/>

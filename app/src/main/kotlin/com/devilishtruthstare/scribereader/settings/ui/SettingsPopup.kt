@@ -1,49 +1,41 @@
 package com.devilishtruthstare.scribereader.settings.ui
 
 import android.content.Context
-import android.util.AttributeSet
-import android.view.LayoutInflater
+import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import androidx.appcompat.widget.SwitchCompat
-import com.devilishtruthstare.scribereader.R
 
 class SettingsPopup(
-    context: Context,
-    attrs: AttributeSet? = null
-) : FrameLayout(context, attrs) {
-    companion object {
-        val LEARNING_MODE = Setting.LEARNING_MODE
-        val VERTICAL_MODE = Setting.VERTICAL_MODE
-        val TTS_MODE = Setting.TTS_MODE
-
-        enum class Setting {
-            LEARNING_MODE, VERTICAL_MODE, TTS_MODE
-        }
+    context: Context
+) : FrameLayout(context) {
+    private val contentLayout = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(50, 50, 50, 100)
+        layoutParams = LayoutParams(
+            LayoutParams.MATCH_PARENT,
+            LayoutParams.WRAP_CONTENT
+        )
     }
-    private val settingMap: MutableMap<Setting, SwitchCompat> = mutableMapOf()
-    private val verticalSwitch: SwitchCompat
-    private val learningSwitch: SwitchCompat
-    private val ttsSwitch: SwitchCompat
+    private val settingMap: MutableSet<String> = mutableSetOf()
 
     init {
-        LayoutInflater.from(context).inflate(R.layout.reader_settings_popup, this, true)
-
-        verticalSwitch = findViewById(R.id.reader_vertical_setting_switch)
-        learningSwitch = findViewById(R.id.reader_learning_setting_switch)
-        ttsSwitch = findViewById(R.id.reader_tts_setting_switch)
-
-        settingMap[Setting.VERTICAL_MODE] = verticalSwitch
-        settingMap[Setting.LEARNING_MODE] = learningSwitch
-        settingMap[Setting.TTS_MODE] = ttsSwitch
+        addView(contentLayout)
     }
 
-    fun setOnToggleChanged(mode: Setting, callback: (Boolean) -> Unit, status: Boolean = false) {
-        if (!settingMap.containsKey(mode)) {
-            return
-        }
-        settingMap[mode]?.setOnCheckedChangeListener { _, isChecked ->
-            callback(isChecked)
-        }
-        settingMap[mode]?.isChecked = status
+    fun addSetting(displayText: String, initialStatus: Boolean = false, callback: (Boolean) -> Unit) {
+        if (settingMap.contains(displayText)) return
+
+        contentLayout.addView(SwitchCompat(context).apply {
+            text = displayText
+            isChecked = initialStatus
+            setOnCheckedChangeListener { _, isChecked ->
+                callback(isChecked)
+            }
+            layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+        })
+        settingMap.add(displayText)
     }
 }
