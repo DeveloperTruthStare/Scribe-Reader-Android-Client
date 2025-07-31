@@ -90,6 +90,11 @@
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.ScribeReader"
             android:windowSoftInputMode="adjustPan" />
+        <activity android:name=".ui.chemistry.PeriodicTableQuizActivity"
+            android:exported="false"
+            android:screenOrientation="sensorPortrait"
+            android:theme="@style/Theme.ScribeReader"
+            android:windowSoftInputMode="adjustPan" />
     </application>
 
 </manifest>

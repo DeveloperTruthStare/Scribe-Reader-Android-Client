@@ -45,6 +45,7 @@
                     android:background="@drawable/button_default"
                     android:layout_margin="10dp"/>
                 <TextView
+                    android:id="@+id/periodTableButton"
                     android:layout_width="125dp"
                     android:layout_height="125dp"
                     android:layout_margin="10dp"

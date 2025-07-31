@@ -1,6 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+
+    kotlin("plugin.serialization") version "1.9.24"
+
 }
 
 android {
@@ -36,6 +39,11 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14" // or latest
     }
 }
 
@@ -57,6 +65,13 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.androidx.coordinatorlayout)
     annotationProcessor(libs.compiler)
+
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.ui)
+    implementation(libs.material3)
+
+    implementation(libs.kotlinx.serialization.json)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
