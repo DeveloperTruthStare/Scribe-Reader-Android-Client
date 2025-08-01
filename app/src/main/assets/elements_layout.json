@@ -1,0 +1,41 @@
+{
+  "type": "surface",
+  "modifier": {
+    "fillMaxWidth": true,
+    "padding": 10
+  },
+  "shape": {
+    "roundedCornerShape": 16
+  },
+  "expandable": true,
+  "children": [
+    {
+      "type": "row",
+      "modifier": {
+        "padding": 10
+      },
+      "children": [
+        {
+          "type": "text",
+          "value": "{{number}} - {{name}}",
+          "modifier": {
+            "weight": 1
+          }
+        },
+        {
+          "type": "text",
+          "value": "({{symbol}}) - {{atomic_mass}}"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "value": "{{summary}}",
+      "modifier": {
+        "fillMaxWidth": true,
+        "padding": 10
+      },
+      "showWhenCollapsed": false
+    }
+  ]
+}

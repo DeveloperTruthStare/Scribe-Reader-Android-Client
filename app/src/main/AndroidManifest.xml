@@ -40,8 +40,7 @@
         <activity
             android:name=".ui.anki.ImportActivity"
             android:exported="true"
-            android:label="@string/title_activity_import"
-            android:theme="@style/Base.Theme.ScribeReader.NoActionBar">
+            android:label="@string/title_activity_import">
 
             <!-- Handle content:// URIs -->
             <intent-filter>
@@ -71,8 +70,7 @@
         <activity
             android:name=".ui.SetupActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="true"
-            android:screenOrientation="sensorPortrait">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -82,19 +80,19 @@
         <activity
             android:name=".ui.reader.Reader"
             android:exported="false"
-            android:screenOrientation="sensorPortrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".ui.MainActivity"
             android:exported="false"
-            android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.ScribeReader"
             android:windowSoftInputMode="adjustPan" />
-        <activity android:name=".ui.chemistry.PeriodicTableQuizActivity"
+        <activity android:name=".ui.chemistry.DataSets"
             android:exported="false"
-            android:screenOrientation="sensorPortrait"
-            android:theme="@style/Theme.ScribeReader"
+            android:theme="@style/Theme.Scribe"
             android:windowSoftInputMode="adjustPan" />
+        <activity android:name=".ui.chemistry.DataSetEditor"
+            android:exported="false"
+            android:theme="@style/Theme.Scribe"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>
