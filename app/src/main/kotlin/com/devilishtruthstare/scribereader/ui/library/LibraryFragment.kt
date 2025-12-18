@@ -1,6 +1,5 @@
 package com.devilishtruthstare.scribereader.ui.library
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -14,8 +13,6 @@ import androidx.fragment.app.Fragment
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.book.RecordKeeper
 import com.devilishtruthstare.scribereader.databinding.FragmentLibraryBinding
-import com.devilishtruthstare.scribereader.editor.EditorActivity
-import com.devilishtruthstare.scribereader.ui.reader.Reader
 import com.devilishtruthstare.scribereader.ui.uploader.UploadFragment
 import java.io.File
 
@@ -56,12 +53,6 @@ class LibraryFragment : Fragment() {
             filePickerLauncher.launch("application/epub+zip")
         }
 
-        binding.fabOption2.setOnClickListener {
-            val intent = Intent(context, EditorActivity::class.java).apply {
-                data = null
-            }
-            requireContext().startActivity(intent)
-        }
         return binding.root
     }
 

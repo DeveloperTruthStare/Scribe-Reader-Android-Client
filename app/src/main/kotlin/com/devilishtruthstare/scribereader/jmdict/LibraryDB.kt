@@ -19,7 +19,7 @@ import kotlinx.coroutines.withContext
 
 class LibraryDB(
     private val context: Context
-) : SQLiteOpenHelper(context, Dictionary.DATABASE_NAME, null, Dictionary.DATABASE_VERSION) {
+) : SQLiteOpenHelper(context, DATABASE_NAME, null, Dictionary.DATABASE_VERSION) {
     companion object {
         @Volatile
         private var INSTANCE: LibraryDB? = null
@@ -28,6 +28,8 @@ class LibraryDB(
                 INSTANCE ?: LibraryDB(context.applicationContext).also { INSTANCE = it }
             }
         }
+
+        private const val DATABASE_NAME = "LibraryDB"
 
         private const val TABLE_BOOKS = "Books"
         private const val COL_BOOK_ID = "BookId"

@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "title": "Recent Books",
+      "children": "idek"
+    },
+    {
+      "title": "Periodic Table",
+      "dataset": "elements_data.json",
+      "layout": "periodic_table_layout.json",
+      "children": [
+        {
+          "title": "Random Element",
+          "dataset": "match_parent",
+          "layout": "elements_layout.json"
+        }
+      ]
+    }
+  ]
+}

@@ -14,7 +14,6 @@ import com.devilishtruthstare.scribereader.jmdict.Dictionary
 import com.devilishtruthstare.scribereader.jmdict.DictionaryUtils
 import kotlinx.coroutines.launch
 
-
 class SetupActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var progressBar: ProgressBar
@@ -41,7 +40,7 @@ class SetupActivity : AppCompatActivity() {
         val dictionary = Dictionary.getInstance(this)
 
         if (!dictionary.isDatabaseInitialized()) {
-            val inputStream = resources.openRawResource(R.raw.jmdict)
+            val inputStream = assets.open("jmdict.json")
             val entries = DictionaryUtils.parseJson(inputStream)
             var entriesAdded = 0
             val numEntries = entries.size

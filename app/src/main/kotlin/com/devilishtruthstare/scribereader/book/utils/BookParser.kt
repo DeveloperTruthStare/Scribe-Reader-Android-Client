@@ -35,6 +35,26 @@ class BookParser(private val context: Context) {
         }
     }
     private val imageMap: MutableMap<String, Resource> = mutableMapOf()
+    fun parseBook2(bookDto: Book): Book {
+        val inputStream: InputStream = FileInputStream(File(context.filesDir, "books/${bookDto.title}/${bookDto.title}.epub"))
+        val book = EpubReader().readEpub(inputStream)
+
+        val imageExtensions = setOf(".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")
+        for((_, resource) in book.resources.resourceMap) {
+            if (resource.mediaType.defaultExtension in imageExtensions) {
+                imageMap[getFileNameWithoutExtension(resource.href)] = resource
+            }
+        }
+
+        val resources = book.spine.spineReferences.map { it.resource }
+        val chapters = resources.map { resource ->
+            parseFile(resource.reader.readText().trim())
+        }
+        bookDto.chapters = chapters.toMutableList()
+        bookDto.chapters.removeIf { it.content.isEmpty() }
+
+        return bookDto
+    }
     suspend fun parseBook(bookDto: Book): Book = withContext(Dispatchers.Default){
         val inputStream: InputStream = FileInputStream(File(context.filesDir, "books/${bookDto.title}/${bookDto.title}.epub"))
         val book = EpubReader().readEpub(inputStream)
@@ -68,7 +88,7 @@ class BookParser(private val context: Context) {
         }
     }
 
-    private fun traverseNodesSequence(element: Element): Sequence<Content> = sequence {
+    fun traverseNodesSequence(element: Element): Sequence<Content> = sequence {
         when (element.tagName()) {
             "p" -> {
                 parsePTag(element)?.let { yield(it) }
@@ -108,7 +128,11 @@ class BookParser(private val context: Context) {
                         }
                         "img", "image" -> {
                             val src = node.attr("src").ifBlank { node.attr("href") }
-                            if (src.isNotBlank()) imageContent = createImageSection(src)
+                            if (src == null) {
+                                imageContent = null
+                            } else {
+                                if (src.isNotBlank()) imageContent = createImageSection(src)
+                            }
                         }
                         else -> {
                             for (n in node.childNodes().reversed()) {

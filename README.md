@@ -1,5 +1,12 @@
 # Scribe Reader
 
+## Building
+In order to compile and build this yourself you'll need the tokenizer package. This can be acquired pre compiled from [TokenizerMobileWrapper](https://github.com/DeveloperTruthStare/TokenizerMobileWrapper).
+
+Follow the steps in the repository above, downloading the tokenizer.aar and tokenizer-sources.jar file and moving them into the /app/libs/ directory that you'll need to create.
+
+After this you should be able to compile and run the app on your device.
+
 ## What is this?
 This is an app I'm making to help advanced langauge learners consume native Japanese books and content. 
 This takes heavy inspiration from Duolingo with it's gamified quizes throughout the reading.

@@ -1,15 +1,11 @@
 package com.devilishtruthstare.scribereader.ui.home
 
-import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -23,35 +19,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.devilishtruthstare.scribereader.FileUtils.loadFile
 import com.devilishtruthstare.scribereader.book.RecordKeeper
-import com.devilishtruthstare.scribereader.ui.chemistry.DataSets
 import com.devilishtruthstare.scribereader.ui.chemistry.flashcard.CardRenderer
 import com.devilishtruthstare.scribereader.ui.chemistry.flashcard.FlashCardDB
 import com.devilishtruthstare.scribereader.ui.chemistry.flashcard.parseElement
 import org.json.JSONArray
 import org.json.JSONObject
-import kotlinx.coroutines.Dispatchers
-import androidx.compose.runtime.*
-import android.util.Log
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import com.devilishtruthstare.scribereader.ImageLoader
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import com.devilishtruthstare.scribereader.R
 import com.devilishtruthstare.scribereader.ui.chemistry.flashcard.DataSet
+import com.devilishtruthstare.scribereader.ui.components.CoverImage
 import com.devilishtruthstare.scribereader.ui.reader.Reader
-import kotlinx.coroutines.withContext
-
 
 @Composable
-fun HomeScreen(context: Context) {
+fun HomeScreen() {
+    val context = LocalContext.current
     val dataSets = remember { FlashCardDB.getDataSets(context) }
 
     val books = remember {
@@ -59,7 +55,6 @@ fun HomeScreen(context: Context) {
     }
 
     LazyColumn {
-
         item {
             Surface (
                 color = MaterialTheme.colorScheme.tertiary,
@@ -78,8 +73,7 @@ fun HomeScreen(context: Context) {
                 modifier = Modifier.fillMaxWidth().padding(all = 20.dp)
             ) {
                 items(books) { book ->
-                    Log.d("Book", book.title)
-                    CoverImage(book.title, context) {
+                    CoverImage(book.title) {
                         val intent = Intent(context, Reader::class.java).apply {
                             putExtra(
                                 context.resources.getString(R.string.EXTRA_BOOK_ID),
@@ -93,60 +87,98 @@ fun HomeScreen(context: Context) {
         }
 
         item {
-            Surface (
-                color = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(all = 10.dp)
-                    .clickable {
-                        val intent = Intent(context, DataSets::class.java)
-                        context.startActivity(intent)
+            Column {
+                val elements = remember { JSONArray(loadFile(context, dataSets[0].fileLocation)) }
+                val layoutJSON = remember { JSONObject(loadFile(context, dataSets[0].layoutFileLocation)) }
+
+                var selectedElement by remember { mutableIntStateOf((0 until elements.length()).random()) }
+
+                PeriodicTableGridWithPositioning(
+                    elements = elements,
+                    selectedElement = selectedElement
+                ) { element ->
+                    selectedElement = element.optInt("number", 1)-1
+                }
+
+                Swippable(
+                    onSwipedLeft = {
+                        selectedElement = (0 until elements.length()).random()
                     },
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Row(modifier = Modifier.fillMaxWidth().padding(all = 10.dp)) {
-                    Text(
-                        modifier = Modifier.fillMaxWidth().weight(1f),
-                        text = "Data Sets"
-                    )
-                    Icon(Icons.Default.Add, contentDescription = "")
+                    onSwipedRight = {
+                        selectedElement = (0 until elements.length()).random()
+                    }
+                ) {
+                    DisplayPreview(elements.getJSONObject(selectedElement), layoutJSON)
                 }
+
             }
         }
 
-        items(dataSets) { dataSet ->
-            ShowOneFromDataSet(context, dataSet)
+        items(dataSets.subList(1, dataSets.size)) { dataSet ->
+            ShowOneFromDataSet(dataSet) { newSelected ->
+
+            }
         }
     }
 }
 
 @Composable
-internal fun CoverImage(title: String, context: Context, onClick: () -> Unit) {
-    val bitmapState by produceState<Bitmap?>(initialValue = null, title) {
-        value = withContext(Dispatchers.IO) {
-            try {
-                ImageLoader.getInstance(context).getCoverImage(title)
-            } catch (e: Exception) {
-                null
-            }
-        }
-    }
+fun PeriodicTableGridWithPositioning(
+    elements: JSONArray,
+    selectedElement: Int = 0,
+    columns: Int = 18,
+    rows: Int = 10,
+    spacing: Dp = 2.dp,
+    onElementClick: (JSONObject) -> Unit
+) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val scope = this
 
-    bitmapState?.let { bmp ->
-        Image(
-            bitmap = bmp.asImageBitmap(),
-            contentDescription = "Cover of $title",
+        val totalWidth = maxWidth
+        val itemSize = remember(totalWidth) {
+            (totalWidth - spacing * (columns - 1)) / columns
+        }
+        val totalHeight = itemSize * rows + spacing * (rows - 1)
+
+        Box(
             modifier = Modifier
+                .height(totalHeight)
                 .fillMaxWidth()
-                .clickable {
-                    onClick()
+        ) {
+            for (i in 0 until elements.length()) {
+                val element = elements.getJSONObject(i)
+                val group = element.optInt("xpos", 1) - 1 // zero-based
+                val period = element.optInt("ypos", 1) - 1 // zero-based
+
+                Box(
+                    modifier = Modifier
+                        .size(itemSize)
+                        .offset(
+                            x = (itemSize + spacing) * group,
+                            y = (itemSize + spacing) * period
+                        )
+                        .background(if (i == selectedElement) Color.Green else Color.LightGray, RoundedCornerShape(8.dp))
+                        .clickable { onElementClick(element) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = element.optString("symbol", "?"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
+                    )
                 }
-        )
+            }
+        }
     }
 }
 
+
+
 @Composable
-internal fun ShowOneFromDataSet(context: Context, dataSet: DataSet) {
+internal fun ShowOneFromDataSet(dataSet: DataSet, onOneChanged: (Int) -> Unit) {
+    val context = LocalContext.current
+
     val elementList = remember { JSONArray(loadFile(context, dataSet.fileLocation)) }
     var selectedElement by remember { mutableIntStateOf((0 until elementList.length()).random()) }
     val layoutJSON = remember { JSONObject(loadFile(context, dataSet.layoutFileLocation)) }
@@ -154,14 +186,15 @@ internal fun ShowOneFromDataSet(context: Context, dataSet: DataSet) {
     Swippable(
         onSwipedLeft = {
             selectedElement = (0 until elementList.length()).random()
+            onOneChanged(selectedElement)
         },
         onSwipedRight = {
             selectedElement = (0 until elementList.length()).random()
+            onOneChanged(selectedElement)
         }
     ) {
         DisplayPreview(elementList.getJSONObject(selectedElement), layoutJSON)
     }
-
 }
 
 @Composable
